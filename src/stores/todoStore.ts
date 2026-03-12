@@ -2,21 +2,41 @@ import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import type { Todo, FilterType } from '../types/todo';
 import * as api from '../services/api';
+import logger, { operation } from '../utils/logger';
 
 export const useTodoStore = defineStore('todo', () => {
   const todos = ref<Todo[]>([]);
   const filter = ref<FilterType>('all');
+  const selectedDate = ref(new Date());
   const isLoading = ref(false);
+  const isDragging = ref(false);
+  const draggedId = ref<string | null>(null);
+
+  const selectedDateRange = computed(() => {
+    const date = selectedDate.value;
+    const start = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
+    return {
+      start: Math.floor(start.getTime() / 1000),
+      end: Math.floor(end.getTime() / 1000)
+    };
+  });
 
   const filteredTodos = computed(() => {
+    const { start, end } = selectedDateRange.value;
+    
+    let filtered = todos.value.filter(t => t.created_at >= start && t.created_at < end);
+    
     switch (filter.value) {
       case 'active':
-        return todos.value.filter(t => !t.completed);
+        filtered = filtered.filter(t => !t.completed);
+        break;
       case 'completed':
-        return todos.value.filter(t => t.completed);
-      default:
-        return todos.value;
+        filtered = filtered.filter(t => t.completed);
+        break;
     }
+    
+    return filtered.sort((a, b) => a.sort_order - b.sort_order);
   });
 
   const stats = computed(() => ({
@@ -25,23 +45,44 @@ export const useTodoStore = defineStore('todo', () => {
     completed: todos.value.filter(t => t.completed).length,
   }));
 
+  const selectedDateStats = computed(() => {
+    const { start, end } = selectedDateRange.value;
+    const dayTodos = todos.value.filter(t => t.created_at >= start && t.created_at < end);
+    return {
+      total: dayTodos.length,
+      active: dayTodos.filter(t => !t.completed).length,
+      completed: dayTodos.filter(t => t.completed).length,
+    };
+  });
+
   async function loadTodos() {
     isLoading.value = true;
     try {
       todos.value = await api.getTodos();
+      await logger.debug('Store', 'Todos loaded successfully', { count: todos.value.length });
     } catch (e) {
-      console.error('Failed to load todos:', e);
+      await logger.error('Store', 'Failed to load todos', e);
     } finally {
       isLoading.value = false;
     }
   }
 
-  async function addTodo(content: string, priority: 'low' | 'medium' | 'high' = 'medium') {
+  async function addTodoWithDate(content: string, createdAt: number) {
+    await logger.debug('Store', 'addTodoWithDate called', { content, createdAt });
     try {
-      const todo = await api.addTodo(content, priority);
+      const maxOrder = todos.value.reduce((max, t) => Math.max(max, t.sort_order), 0);
+      const sortOrder = maxOrder + 1;
+      const todo = await api.addTodoWithDate(content, sortOrder, createdAt);
       todos.value.unshift(todo);
+      
+      await operation('任务管理', '任务', `添加任务: ${content}`, '成功');
+      await logger.info('Store', 'Todo added successfully', { id: todo.id, content });
+      
+      return todo;
     } catch (e) {
-      console.error('Failed to add todo:', e);
+      await operation('任务管理', '任务', `添加任务失败: ${content}`, '失败');
+      await logger.error('Store', 'addTodoWithDate failed', e);
+      throw e;
     }
   }
 
@@ -52,18 +93,59 @@ export const useTodoStore = defineStore('todo', () => {
     try {
       await api.toggleTodo(id, !todo.completed);
       todo.completed = !todo.completed;
-      todo.completed_at = todo.completed ? Date.now() : null;
+      todo.completed_at = todo.completed ? Math.floor(Date.now() / 1000) : null;
+      
+      await operation('任务管理', '任务', `${todo.completed ? '完成' : '重新打开'}任务: ${todo.content}`, '成功');
+      await logger.debug('Store', 'Todo toggled', { id, completed: todo.completed });
     } catch (e) {
-      console.error('Failed to toggle todo:', e);
+      await operation('任务管理', '任务', `切换任务状态失败`, '失败');
+      await logger.error('Store', 'Failed to toggle todo', e);
     }
   }
 
   async function deleteTodo(id: string) {
+    const todo = todos.value.find(t => t.id === id);
+    if (!todo) return;
+    
     try {
       await api.deleteTodo(id);
       todos.value = todos.value.filter(t => t.id !== id);
+      
+      await operation('任务管理', '任务', `删除任务: ${todo.content}`, '成功');
+      await logger.debug('Store', 'Todo deleted', { id });
     } catch (e) {
-      console.error('Failed to delete todo:', e);
+      await operation('任务管理', '任务', `删除任务失败`, '失败');
+      await logger.error('Store', 'Failed to delete todo', e);
+    }
+  }
+
+  async function reorderTodos(fromIndex: number, toIndex: number) {
+    const todoList = filteredTodos.value;
+    if (fromIndex === toIndex || fromIndex < 0 || toIndex < 0) return;
+    
+    const movedTodo = todoList[fromIndex];
+    if (!movedTodo) return;
+    
+    const newOrder = [...todoList];
+    newOrder.splice(fromIndex, 1);
+    newOrder.splice(toIndex, 0, movedTodo);
+    
+    const updates: Promise<void>[] = [];
+    
+    newOrder.forEach((todo, index) => {
+      const newSortOrder = index;
+      if (todo.sort_order !== newSortOrder) {
+        todo.sort_order = newSortOrder;
+        updates.push(api.updateTodoOrder(todo.id, newSortOrder));
+      }
+    });
+    
+    try {
+      await Promise.all(updates);
+      await logger.debug('Store', 'Todos reordered', { fromIndex, toIndex });
+    } catch (e) {
+      await logger.error('Store', 'Failed to reorder todos', e);
+      await loadTodos();
     }
   }
 
@@ -71,16 +153,32 @@ export const useTodoStore = defineStore('todo', () => {
     filter.value = newFilter;
   }
 
+  function setSelectedDate(date: Date) {
+    selectedDate.value = date;
+  }
+
+  function setDragging(value: boolean, id: string | null = null) {
+    isDragging.value = value;
+    draggedId.value = id;
+  }
+
   return {
     todos,
     filter,
+    selectedDate,
     isLoading,
+    isDragging,
+    draggedId,
     filteredTodos,
     stats,
+    selectedDateStats,
     loadTodos,
-    addTodo,
+    addTodoWithDate,
     toggleTodo,
     deleteTodo,
+    reorderTodos,
     setFilter,
+    setSelectedDate,
+    setDragging,
   };
 });

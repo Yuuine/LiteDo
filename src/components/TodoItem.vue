@@ -1,39 +1,32 @@
 <script setup lang="ts">
+import { ref } from 'vue';
 import type { Todo } from '../types/todo';
 import { useTodoStore } from '../stores/todoStore';
+import ConfirmDialog from './ConfirmDialog.vue';
+import { formatTime } from '../utils/dateUtils';
 
 const props = defineProps<{
   todo: Todo;
 }>();
 
 const store = useTodoStore();
+const showConfirm = ref(false);
 
-const priorityLabels: Record<string, string> = {
-  low: '低',
-  medium: '中',
-  high: '高',
-};
+function handleDelete() {
+  showConfirm.value = true;
+}
 
-const priorityColors: Record<string, string> = {
-  low: 'var(--priority-low)',
-  medium: 'var(--priority-medium)',
-  high: 'var(--priority-high)',
-};
-
-function formatDate(timestamp: number): string {
-  const date = new Date(timestamp * 1000);
-  const now = new Date();
-  const isToday = date.toDateString() === now.toDateString();
-  
-  if (isToday) {
-    return date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
-  }
-  return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
+function confirmDelete() {
+  store.deleteTodo(props.todo.id);
+  showConfirm.value = false;
 }
 </script>
 
 <template>
-  <div class="todo-item" :class="{ completed: todo.completed }">
+  <div 
+    class="todo-item" 
+    :class="{ completed: todo.completed }"
+  >
     <label class="checkbox-wrapper">
       <input
         type="checkbox"
@@ -46,26 +39,22 @@ function formatDate(timestamp: number): string {
     
     <div class="todo-content">
       <span class="todo-text">{{ todo.content }}</span>
-      <div class="todo-meta">
-        <span
-          class="priority-badge"
-          :style="{ backgroundColor: priorityColors[todo.priority] }"
-        >
-          {{ priorityLabels[todo.priority] }}
-        </span>
-        <span class="date">{{ formatDate(todo.created_at) }}</span>
-      </div>
+      <span class="time">{{ formatTime(todo.created_at) }}</span>
     </div>
     
-    <button
-      class="delete-btn"
-      @click="store.deleteTodo(todo.id)"
-      title="删除"
-    >
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+    <button class="delete-btn" @click="handleDelete" title="删除">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M18 6L6 18M6 6l12 12"/>
       </svg>
     </button>
+    
+    <ConfirmDialog
+      v-if="showConfirm"
+      title="删除确认"
+      message="确定要删除这条待办事项吗？"
+      @confirm="confirmDelete"
+      @cancel="showConfirm = false"
+    />
   </div>
 </template>
 
@@ -73,27 +62,19 @@ function formatDate(timestamp: number): string {
 .todo-item {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   padding: 14px 16px;
-  background: var(--bg-secondary);
-  border-radius: 10px;
+  background: var(--bg-primary);
+  border-radius: 12px;
   transition: all 0.2s;
-  animation: slideIn 0.3s ease;
-}
-
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  border: 1px solid var(--border-color);
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .todo-item:hover {
-  transform: translateX(4px);
+  border-color: var(--accent-color);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.1);
 }
 
 .todo-item.completed {
@@ -102,13 +83,13 @@ function formatDate(timestamp: number): string {
 
 .todo-item.completed .todo-text {
   text-decoration: line-through;
-  color: var(--text-muted);
+  color: var(--text-secondary);
 }
 
 .checkbox-wrapper {
   position: relative;
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   flex-shrink: 0;
 }
 
@@ -125,25 +106,29 @@ function formatDate(timestamp: number): string {
   position: absolute;
   top: 0;
   left: 0;
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   border: 2px solid var(--border-color);
-  border-radius: 6px;
+  border-radius: 50%;
   transition: all 0.2s;
 }
 
-.checkbox:checked + .checkmark {
-  background: var(--accent-color);
+.todo-item:hover .checkmark {
   border-color: var(--accent-color);
+}
+
+.checkbox:checked + .checkmark {
+  background: var(--success-color);
+  border-color: var(--success-color);
 }
 
 .checkbox:checked + .checkmark::after {
   content: '';
   position: absolute;
   left: 6px;
-  top: 2px;
-  width: 6px;
-  height: 12px;
+  top: 3px;
+  width: 5px;
+  height: 9px;
   border: solid white;
   border-width: 0 2px 2px 0;
   transform: rotate(45deg);
@@ -152,6 +137,7 @@ function formatDate(timestamp: number): string {
 .todo-content {
   flex: 1;
   min-width: 0;
+  overflow: hidden;
 }
 
 .todo-text {
@@ -159,33 +145,21 @@ function formatDate(timestamp: number): string {
   font-size: 14px;
   color: var(--text-primary);
   word-break: break-word;
+  line-height: 1.4;
 }
 
-.todo-meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.time {
+  display: block;
+  font-size: 11px;
+  color: var(--text-muted);
   margin-top: 4px;
 }
 
-.priority-badge {
-  font-size: 11px;
-  padding: 2px 8px;
-  border-radius: 10px;
-  color: white;
-  font-weight: 500;
-}
-
-.date {
-  font-size: 11px;
-  color: var(--text-muted);
-}
-
 .delete-btn {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   border: none;
-  border-radius: 6px;
+  border-radius: 50%;
   background: transparent;
   color: var(--text-muted);
   cursor: pointer;
@@ -194,6 +168,7 @@ function formatDate(timestamp: number): string {
   justify-content: center;
   opacity: 0;
   transition: all 0.2s;
+  flex-shrink: 0;
 }
 
 .todo-item:hover .delete-btn {

@@ -1,22 +1,107 @@
 import { invoke } from '@tauri-apps/api/core';
 import type { Todo } from '../types/todo';
+import logger from '../utils/logger';
 
-export async function getTodos(): Promise<Todo[]> {
-  return await invoke<Todo[]>('get_todos');
+export interface LogEntry {
+  id: string;
+  action: string;
+  todo_content: string | null;
+  created_at: number;
 }
 
-export async function addTodo(content: string, priority: string): Promise<Todo> {
-  return await invoke<Todo>('add_todo', { content, priority });
+export async function getTodos(): Promise<Todo[]> {
+  logger.info('API', 'Fetching todos');
+  try {
+    const result = await invoke<Todo[]>('get_todos');
+    logger.info('API', 'Fetched todos successfully', { count: result.length });
+    return result;
+  } catch (e) {
+    logger.error('API', 'Failed to fetch todos', e);
+    throw e;
+  }
+}
+
+export async function addTodo(content: string, sortOrder: number): Promise<Todo> {
+  logger.info('API', 'Adding todo', { content, sortOrder });
+  try {
+    const result = await invoke<Todo>('add_todo', { 
+      content, 
+      priority: 'medium', 
+      sortOrder 
+    });
+    logger.info('API', 'Added todo successfully', result);
+    return result;
+  } catch (e) {
+    logger.error('API', 'Failed to add todo', e);
+    throw e;
+  }
+}
+
+export async function addTodoWithDate(content: string, sortOrder: number, createdAt: number): Promise<Todo> {
+  const params = { content, priority: 'medium', sortOrder, createdAt };
+  logger.info('API', 'Adding todo with date', params);
+  try {
+    const result = await invoke<Todo>('add_todo_with_date', params);
+    logger.info('API', 'Added todo with date successfully', result);
+    return result;
+  } catch (e) {
+    logger.error('API', 'Failed to add todo with date', { error: e, params });
+    throw e;
+  }
 }
 
 export async function toggleTodo(id: string, completed: boolean): Promise<void> {
-  await invoke('toggle_todo', { id, completed });
+  logger.info('API', 'Toggling todo', { id, completed });
+  try {
+    await invoke('toggle_todo', { id, completed });
+    logger.info('API', 'Toggled todo successfully');
+  } catch (e) {
+    logger.error('API', 'Failed to toggle todo', e);
+    throw e;
+  }
 }
 
 export async function deleteTodo(id: string): Promise<void> {
-  await invoke('delete_todo', { id });
+  logger.info('API', 'Deleting todo', { id });
+  try {
+    await invoke('delete_todo', { id });
+    logger.info('API', 'Deleted todo successfully');
+  } catch (e) {
+    logger.error('API', 'Failed to delete todo', e);
+    throw e;
+  }
 }
 
 export async function updateTodoContent(id: string, content: string): Promise<void> {
-  await invoke('update_todo_content', { id, content });
+  logger.info('API', 'Updating todo content', { id, content });
+  try {
+    await invoke('update_todo_content', { id, content });
+    logger.info('API', 'Updated todo content successfully');
+  } catch (e) {
+    logger.error('API', 'Failed to update todo content', e);
+    throw e;
+  }
+}
+
+export async function updateTodoOrder(id: string, sortOrder: number): Promise<void> {
+  logger.info('API', 'Updating todo order', { id, sortOrder });
+  try {
+    await invoke('update_todo_order', { id, sortOrder });
+    logger.info('API', 'Updated todo order successfully');
+  } catch (e) {
+    logger.error('API', 'Failed to update todo order', e);
+    throw e;
+  }
+}
+
+export async function getLogs(): Promise<LogEntry[]> {
+  logger.info('API', 'Fetching logs');
+  try {
+    const result = await invoke<LogEntry[]>('get_logs');
+    logger.info('API', 'Fetched logs successfully', { count: result.length });
+    return result;
+  } catch (e) {
+    logger.error('API', 'Failed to fetch logs', e);
+    throw e;
+  }
 }
