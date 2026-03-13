@@ -4,6 +4,7 @@ import { useTodoStore } from './stores/todoStore';
 import Calendar from './components/Calendar.vue';
 import TodoItem from './components/TodoItem.vue';
 import SettingsPanel from './components/SettingsPanel.vue';
+import AIDialog from './components/AIDialog.vue';
 import Toast from './components/Toast.vue';
 import logger, { system } from './utils/logger';
 import { formatDate } from './utils/dateUtils';
@@ -11,6 +12,7 @@ import { formatDate } from './utils/dateUtils';
 const store = useTodoStore();
 const showCalendar = ref(false);
 const showSettings = ref(false);
+const showAIDialog = ref(false);
 const newTaskContent = ref('');
 const isSubmitting = ref(false);
 
@@ -22,6 +24,7 @@ function handleKeydown(e: KeyboardEvent) {
   if (e.key === 'Escape') {
     showCalendar.value = false;
     showSettings.value = false;
+    showAIDialog.value = false;
   }
 }
 
@@ -67,6 +70,11 @@ async function handleOpenSettings() {
   await system('点击操作', '设置按钮', '用户点击打开设置面板');
 }
 
+async function handleOpenAI() {
+  showAIDialog.value = true;
+  await system('点击操作', 'AI按钮', '用户点击打开AI解析对话框');
+}
+
 async function handleSelectDate(date: Date) {
   await logger.debug('App', 'Date selected', { date: date.toISOString() });
   store.setSelectedDate(date);
@@ -101,6 +109,12 @@ onUnmounted(() => {
         </button>
       </div>
       <div class="header-right">
+        <button class="ai-btn" @click="handleOpenAI" title="AI智能解析" type="button">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2M7.5 13A2.5 2.5 0 0 0 5 15.5A2.5 2.5 0 0 0 7.5 18a2.5 2.5 0 0 0 2.5-2.5A2.5 2.5 0 0 0 7.5 13m9 0a2.5 2.5 0 0 0-2.5 2.5a2.5 2.5 0 0 0 2.5 2.5a2.5 2.5 0 0 0 2.5-2.5a2.5 2.5 0 0 0-2.5-2.5z"/>
+          </svg>
+          <span>AI</span>
+        </button>
         <button class="settings-btn" @click="handleOpenSettings" title="设置" type="button">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="3"/>
@@ -194,6 +208,7 @@ onUnmounted(() => {
     </Teleport>
     
     <SettingsPanel v-if="showSettings" @close="showSettings = false" />
+    <AIDialog v-if="showAIDialog" @close="showAIDialog = false" />
     <Toast />
   </div>
 </template>
@@ -253,6 +268,27 @@ onUnmounted(() => {
 .task-count {
   font-size: 13px;
   color: var(--text-muted);
+}
+
+.ai-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  background: linear-gradient(135deg, #6366f1);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 6px 16px;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+}
+
+.ai-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
 }
 
 .settings-btn {
