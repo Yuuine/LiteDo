@@ -11,6 +11,21 @@ export const useTodoStore = defineStore('todo', () => {
   const isLoading = ref(false);
   const isDragging = ref(false);
   const draggedId = ref<string | null>(null);
+  const maxTodoLength = ref(30);
+
+  function loadSettings() {
+    try {
+      const savedSettings = localStorage.getItem('app_settings');
+      if (savedSettings) {
+        const settings = JSON.parse(savedSettings);
+        maxTodoLength.value = settings.maxTodoLength || 30;
+      }
+    } catch (e) {
+      console.error('Failed to load settings:', e);
+    }
+  }
+
+  loadSettings();
 
   const selectedDateRange = computed(() => {
     const date = selectedDate.value;
@@ -69,6 +84,13 @@ export const useTodoStore = defineStore('todo', () => {
 
   async function addTodoWithDate(content: string, createdAt: number) {
     await logger.debug('Store', 'addTodoWithDate called', { content, createdAt });
+    
+    if (content.length > maxTodoLength.value) {
+      const error = `待办事项字数超过限制（最多${maxTodoLength.value}字）`;
+      await operation('任务管理', '任务', `添加任务失败: 字数超限`, '失败');
+      throw new Error(error);
+    }
+    
     try {
       const maxOrder = todos.value.reduce((max, t) => Math.max(max, t.sort_order), 0);
       const sortOrder = maxOrder + 1;
@@ -169,6 +191,7 @@ export const useTodoStore = defineStore('todo', () => {
     isLoading,
     isDragging,
     draggedId,
+    maxTodoLength,
     filteredTodos,
     stats,
     selectedDateStats,

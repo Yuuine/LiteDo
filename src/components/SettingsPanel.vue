@@ -1,15 +1,28 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
+import { useTodoStore } from '../stores/todoStore';
 import OperationLogViewer from './OperationLogViewer.vue';
+import { operation } from '../utils/logger';
+
+declare global {
+  interface WindowEventMap {
+    toast: CustomEvent<{ message: string; type: 'success' | 'error' | 'info' }>;
+  }
+}
+
+function showToast(message: string, type: 'success' | 'error' | 'info' = 'success') {
+  window.dispatchEvent(new CustomEvent('toast', { detail: { message, type } }));
+}
 
 const emit = defineEmits<{
   close: [];
 }>();
 
+const store = useTodoStore();
+
 const settings = ref({
-  notifications: true,
   autoStart: false,
-  minimizeToTray: true,
+  maxTodoLength: 30,
 });
 
 const showOperationLog = ref(false);
@@ -31,17 +44,41 @@ async function loadSettings() {
 
 async function handleSave() {
   try {
+    const oldSettingsStr = localStorage.getItem('app_settings');
+    const oldSettings = oldSettingsStr ? JSON.parse(oldSettingsStr) : {};
+    const oldMaxTodoLength = oldSettings.maxTodoLength || 30;
+    const oldAutoStart = oldSettings.autoStart || false;
+    
     localStorage.setItem('app_settings', JSON.stringify(settings.value));
+    store.maxTodoLength = settings.value.maxTodoLength;
+    
+    const changes: string[] = [];
+    if (settings.value.autoStart !== oldAutoStart) {
+      changes.push(`开机自启动: ${settings.value.autoStart ? '开启' : '关闭'}`);
+    }
+    if (settings.value.maxTodoLength !== oldMaxTodoLength) {
+      changes.push(`字数限制: ${oldMaxTodoLength}字 → ${settings.value.maxTodoLength}字`);
+    }
+    
+    if (changes.length > 0) {
+      await operation('系统设置', '设置', `修改设置: ${changes.join(', ')}`, '成功');
+    } else {
+      await operation('系统设置', '设置', '保存设置（无变更）', '成功');
+    }
+    
     console.log('Settings saved:', settings.value);
+    showToast('保存成功', 'success');
     emit('close');
   } catch (e) {
     console.error('Failed to save settings:', e);
-    alert('保存设置失败: ' + e);
+    await operation('系统设置', '设置', '保存设置失败', '失败');
+    showToast('保存失败，请重试', 'error');
   }
 }
 
-function viewOperationLog() {
+async function viewOperationLog() {
   showOperationLog.value = true;
+  await operation('日志管理', '操作日志', '查看操作日志', '成功');
 }
 
 async function openOperationLogLocation() {
@@ -52,8 +89,10 @@ async function openOperationLogLocation() {
     const operationLogPath = `${appDir}\\operation.log`;
     
     await invoke('open_file_location', { path: operationLogPath });
+    await operation('日志管理', '操作日志', '打开操作日志文件位置', '成功');
   } catch (e) {
     console.error('Failed to open operation log location:', e);
+    await operation('日志管理', '操作日志', '打开操作日志文件位置失败', '失败');
     alert('无法打开操作日志文件位置: ' + e);
   }
 }
@@ -62,8 +101,10 @@ async function openDebugLogLocation() {
   try {
     const { invoke } = await import('@tauri-apps/api/core');
     await invoke('open_log_file_location');
+    await operation('日志管理', '调试日志', '打开调试日志文件位置', '成功');
   } catch (e) {
     console.error('Failed to open debug log location:', e);
+    await operation('日志管理', '调试日志', '打开调试日志文件位置失败', '失败');
     alert('无法打开调试日志文件位置: ' + e);
   }
 }
@@ -88,17 +129,6 @@ async function openDebugLogLocation() {
             
             <div class="setting-item">
               <div class="setting-info">
-                <span class="setting-label">启用通知</span>
-                <span class="setting-desc">任务提醒时显示通知</span>
-              </div>
-              <label class="toggle">
-                <input type="checkbox" v-model="settings.notifications" />
-                <span class="toggle-slider"></span>
-              </label>
-            </div>
-            
-            <div class="setting-item">
-              <div class="setting-info">
                 <span class="setting-label">开机自启动</span>
                 <span class="setting-desc">系统启动时自动运行应用</span>
               </div>
@@ -110,13 +140,15 @@ async function openDebugLogLocation() {
             
             <div class="setting-item">
               <div class="setting-info">
-                <span class="setting-label">最小化到托盘</span>
-                <span class="setting-desc">关闭窗口时最小化到系统托盘</span>
+                <span class="setting-label">待办事项字数限制</span>
               </div>
-              <label class="toggle">
-                <input type="checkbox" v-model="settings.minimizeToTray" />
-                <span class="toggle-slider"></span>
-              </label>
+              <input 
+                type="number" 
+                v-model.number="settings.maxTodoLength" 
+                min="10" 
+                max="200"
+                class="number-input"
+              />
             </div>
           </section>
           
@@ -126,7 +158,6 @@ async function openDebugLogLocation() {
             <div class="setting-item">
               <div class="setting-info">
                 <span class="setting-label">操作日志</span>
-                <span class="setting-desc">记录用户的操作历史</span>
               </div>
               <div class="btn-group">
                 <button class="btn-view-log" @click="viewOperationLog" type="button" title="查看操作日志">
@@ -148,7 +179,7 @@ async function openDebugLogLocation() {
             <div class="setting-item">
               <div class="setting-info">
                 <span class="setting-label">调试日志</span>
-                <span class="setting-desc">记录系统运行详情（技术用）</span>
+                <span class="setting-desc">记录系统运行详情</span>
               </div>
               <button class="btn-open-log" @click="openDebugLogLocation" type="button" title="在资源管理器中打开">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -295,11 +326,6 @@ async function openDebugLogLocation() {
   color: var(--text-primary);
 }
 
-.setting-desc {
-  font-size: 12px;
-  color: var(--text-muted);
-}
-
 .toggle {
   position: relative;
   display: inline-block;
@@ -415,5 +441,34 @@ async function openDebugLogLocation() {
 .btn-view-log:hover {
   background: var(--bg-secondary);
   transform: translateY(-1px);
+}
+
+.number-input {
+  width: 80px;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 500;
+  text-align: center;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.number-input:hover {
+  border-color: var(--accent-color);
+}
+
+.number-input:focus {
+  outline: none;
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.number-input::-webkit-inner-spin-button,
+.number-input::-webkit-outer-spin-button {
+  opacity: 1;
 }
 </style>

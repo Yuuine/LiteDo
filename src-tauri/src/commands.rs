@@ -358,7 +358,7 @@ pub async fn get_app_data_dir(app: tauri::AppHandle) -> Result<String, String> {
 }
 
 #[tauri::command]
-pub async fn open_file_location(app: tauri::AppHandle, path: String) -> Result<String, String> {
+pub async fn open_file_location(_app: tauri::AppHandle, path: String) -> Result<String, String> {
     use std::process::Command;
     
     let log_path = std::path::PathBuf::from(&path);

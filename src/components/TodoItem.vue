@@ -26,8 +26,9 @@ function confirmDelete() {
   <div 
     class="todo-item" 
     :class="{ completed: todo.completed }"
-  >
-    <label class="checkbox-wrapper">
+    @click="store.toggleTodo(todo.id)"
+    >
+    <label class="checkbox-wrapper" @click.stop>
       <input
         type="checkbox"
         :checked="todo.completed"
@@ -42,7 +43,7 @@ function confirmDelete() {
       <span class="time">{{ formatTime(todo.created_at) }}</span>
     </div>
     
-    <button class="delete-btn" @click="handleDelete" title="删除">
+    <button class="delete-btn" @click.stop="handleDelete" title="删除">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M18 6L6 18M6 6l12 12"/>
       </svg>
@@ -70,6 +71,7 @@ function confirmDelete() {
   border: 1px solid var(--border-color);
   width: 100%;
   box-sizing: border-box;
+  cursor: pointer;
 }
 
 .todo-item:hover {
@@ -77,13 +79,11 @@ function confirmDelete() {
   box-shadow: 0 2px 8px rgba(99, 102, 241, 0.1);
 }
 
-.todo-item.completed {
-  opacity: 0.6;
-}
-
 .todo-item.completed .todo-text {
   text-decoration: line-through;
-  color: var(--text-secondary);
+  text-decoration-thickness: 1.5px;
+  color: var(--text-muted);
+  opacity: 0.8;
 }
 
 .checkbox-wrapper {
@@ -125,13 +125,13 @@ function confirmDelete() {
 .checkbox:checked + .checkmark::after {
   content: '';
   position: absolute;
-  left: 6px;
-  top: 3px;
+  left: 50%;
+  top: 50%;
   width: 5px;
   height: 9px;
   border: solid white;
   border-width: 0 2px 2px 0;
-  transform: rotate(45deg);
+  transform: translate(-50%, -60%) rotate(45deg);
 }
 
 .todo-content {

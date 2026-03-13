@@ -40,6 +40,11 @@ async function handleAddTask() {
     return;
   }
   
+  if (text.length > store.maxTodoLength) {
+    showToast(`待办事项字数超过限制（最多${store.maxTodoLength}字）`, 'error');
+    return;
+  }
+  
   isSubmitting.value = true;
   const createdTimestamp = Math.floor(store.selectedDate.getTime() / 1000);
   await logger.debug('App', 'Adding task', { text, createdTimestamp, selectedDate: store.selectedDate.toISOString() });
@@ -94,12 +99,18 @@ onUnmounted(() => {
     <main class="main">
       <div class="add-task-section">
         <form class="add-task-form" @submit.prevent="handleAddTask">
-          <input
-            v-model="newTaskContent"
-            type="text"
-            placeholder="添加新任务..."
-            class="task-input"
-          />
+          <div class="input-wrapper">
+            <input
+              v-model="newTaskContent"
+              type="text"
+              :placeholder="`添加新任务（最多${store.maxTodoLength}字）...`"
+              class="task-input"
+              :maxlength="store.maxTodoLength"
+            />
+            <span class="char-count" v-if="newTaskContent.length > 0">
+              {{ newTaskContent.length }}/{{ store.maxTodoLength }}
+            </span>
+          </div>
           <button 
             type="submit" 
             class="btn-add" 
@@ -268,9 +279,15 @@ onUnmounted(() => {
   align-items: center;
 }
 
-.task-input {
+.input-wrapper {
   flex: 1;
+  position: relative;
+}
+
+.task-input {
+  width: 100%;
   padding: 14px 16px;
+  padding-right: 60px;
   border: 2px solid var(--border-color);
   border-radius: 12px;
   background: var(--bg-primary);
@@ -287,6 +304,16 @@ onUnmounted(() => {
 
 .task-input::placeholder {
   color: var(--text-muted);
+}
+
+.char-count {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  color: var(--text-muted);
+  pointer-events: none;
 }
 
 .btn-add {
