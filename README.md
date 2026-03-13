@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![LiteDo Logo](./screenshots/logo.png)
+![LiteDo Logo](./screenshots/logo.svg)
 
 **简洁、高效、跨平台的待办事项管理工具**
 
