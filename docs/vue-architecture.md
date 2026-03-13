@@ -60,15 +60,18 @@ src/
 │   ├── AIDialog.vue        # AI 解析对话框
 │   ├── Calendar.vue        # 日历组件
 │   ├── ConfirmDialog.vue   # 确认对话框
+│   ├── FilterTabs.vue      # 筛选标签组件（可复用）
 │   ├── Icon.vue            # 图标组件（可复用）
 │   ├── Loading.vue         # 加载组件（可复用）
 │   ├── Modal.vue           # 模态框组件（可复用）
 │   ├── OperationLogViewer.vue # 操作日志查看器
+│   ├── PrioritySelector.vue # 优先级选择器（可复用）
 │   ├── SettingsPanel.vue   # 设置面板
+│   ├── TaskInput.vue       # 任务输入组件（可复用）
 │   ├── Toast.vue           # 消息提示组件
 │   └── TodoItem.vue        # 待办事项组件
 ├── constants/              # 常量定义
-│   └── model.ts            # AI 模型相关常量
+│   └── model.ts            # AI 模型相关常量、优先级配置
 ├── services/               # 服务层
 │   ├── api.ts              # Tauri API 封装
 │   └── openaiApi.ts        # OpenAI API 封装
@@ -80,12 +83,13 @@ src/
 ├── types/                  # TypeScript 类型定义
 │   ├── global.d.ts         # 全局类型声明
 │   ├── model.ts            # AI 模型类型
-│   └── todo.ts             # 待办事项类型
+│   └── todo.ts             # 待办事项类型、优先级类型
 ├── utils/                  # 工具函数
 │   ├── crypto.ts           # 加密工具
 │   ├── dateUtils.ts        # 日期处理工具
 │   ├── loading.ts          # 加载状态工具
 │   ├── logger.ts           # 日志工具
+│   ├── priority.ts         # 优先级工具函数
 │   └── toast.ts            # 消息提示工具
 ├── App.vue                 # 根组件
 └── main.ts                 # 应用入口
@@ -188,6 +192,17 @@ isSameDay(d1, d2): boolean         // 判断同一天
 getDateRange(date): {start, end}   // 获取日期范围
 ```
 
+#### priority.ts
+
+优先级相关工具函数。
+
+```typescript
+getPriorityOptions(): PriorityOption[]   // 获取优先级选项列表
+getPriorityLabel(priority): string       // 获取优先级标签（高/中/低）
+getPriorityColor(priority): string       // 获取优先级颜色
+getDefaultPriority(): PriorityType       // 获取默认优先级（medium）
+```
+
 #### crypto.ts
 
 加密工具，用于 API 密钥加密存储。
@@ -232,6 +247,47 @@ hideLoading(): void
 withLoading(fn): Promise<T>  // 自动管理加载状态
 ```
 
+### 4. 常量模块 (constants)
+
+#### model.ts
+
+AI 模型相关常量和优先级配置。
+
+```typescript
+// 存储键
+STORAGE_KEYS = {
+  MODEL_CONFIGS: 'model_configs',
+  APP_SETTINGS: 'app_settings',
+}
+
+// 优先级配置
+PRIORITY_CONFIG = {
+  high: { label: '高', color: 'var(--danger-color)' },
+  medium: { label: '中', color: 'var(--warning-color)' },
+  low: { label: '低', color: 'var(--success-color)' },
+}
+
+// 优先级排序顺序
+PRIORITY_ORDER = { high: 0, medium: 1, low: 2 }
+
+// 默认优先级
+DEFAULT_PRIORITY = 'medium'
+
+// AI 提示词
+AI_PROMPTS = {
+  TODO_PARSER: '...',           // 带优先级解析
+  TODO_PARSER_NO_PRIORITY: '...', // 不带优先级解析
+}
+
+// API 配置
+API_CONFIG = {
+  DEFAULT_TIMEOUT: 30000,
+  TEST_MAX_TOKENS: 5,
+  PARSE_MAX_TOKENS: 1000,
+  DEFAULT_TEMPERATURE: 0.3,
+}
+```
+
 ## 组件设计
 
 ### 可复用组件
@@ -245,7 +301,7 @@ withLoading(fn): Promise<T>  // 自动管理加载状态
 <Icon name="loading" :size="32" color="var(--accent-color)" />
 ```
 
-支持的图标：calendar, ai, settings, close, plus, delete, edit, chevron-left, chevron-right, check, eye, folder, loading, checkbox, checkbox-checked
+支持的图标：calendar, ai, settings, close, plus, delete, edit, chevron-left, chevron-right, chevron-down, check, eye, folder, loading, checkbox, checkbox-checked
 
 #### Modal 组件
 
@@ -272,11 +328,65 @@ withLoading(fn): Promise<T>  // 自动管理加载状态
 <Loading />
 ```
 
+#### PrioritySelector 组件
+
+优先级选择器组件，支持高/中/低三级优先级选择。
+
+```vue
+<PrioritySelector v-model="selectedPriority" />
+```
+
+特性：
+- 下拉菜单交互
+- 颜色区分优先级
+- 响应式设计
+
+#### FilterTabs 组件
+
+筛选标签组件，用于任务列表筛选。
+
+```vue
+<FilterTabs
+  :model-value="currentFilter"
+  :stats="{ total: 10, active: 5, completed: 5 }"
+  @update:model-value="setFilter"
+/>
+```
+
+特性：
+- 全部/待办/完成三个筛选
+- 显示对应数量角标
+- 待办数量红色高亮
+
+#### TaskInput 组件
+
+任务输入组件，集成输入框和优先级选择器。
+
+```vue
+<TaskInput
+  :disabled="isSubmitting"
+  :show-priority="priorityEnabled"
+  @submit="handleAddTask"
+/>
+```
+
+特性：
+- 一体化输入栏设计
+- 可选优先级选择器
+- 回车提交
+- 自动重置
+
 ### 业务组件
 
 #### TodoItem
 
 待办事项组件，展示单个待办。
+
+特性：
+- 点击切换完成状态
+- 悬停显示编辑/删除按钮
+- 编辑模式：失焦自动保存，ESC 取消
+- 优先级标签显示（可配置）
 
 #### Calendar
 
@@ -286,9 +396,19 @@ withLoading(fn): Promise<T>  // 自动管理加载状态
 
 设置面板，包含通用设置和模型配置。
 
+特性：
+- 优先级功能开关
+- 按优先级排序选项
+- AI 模型配置
+
 #### AIDialog
 
 AI 解析对话框，支持自然语言解析待办。
+
+特性：
+- 首次使用引导
+- 优先级自动识别
+- 批量添加任务
 
 ## 最佳实践
 
@@ -411,13 +531,26 @@ export interface Todo {
   id: string;
   content: string;
   completed: boolean;
-  priority: 'low' | 'medium' | 'high';
+  priority: PriorityType;
   created_at: number;
   completed_at: number | null;
   sort_order: number;
 }
 
+export type PriorityType = 'low' | 'medium' | 'high';
+
 export type FilterType = 'all' | 'active' | 'completed';
+
+export interface PriorityOption {
+  value: PriorityType;
+  label: string;
+  color: string;
+}
+
+export interface FilterTab {
+  value: FilterType;
+  label: string;
+}
 ```
 
 #### Props 类型声明

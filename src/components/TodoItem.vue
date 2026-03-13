@@ -6,6 +6,7 @@ import ConfirmDialog from './ConfirmDialog.vue';
 import Icon from './Icon.vue';
 import { formatTime } from '../utils/dateUtils';
 import { showToast } from '../utils/toast';
+import { getPriorityLabel } from '../utils/priority';
 
 const props = defineProps<{
   todo: Todo;
@@ -17,17 +18,17 @@ const isEditing = ref(false);
 const editContent = ref('');
 const editInput = ref<HTMLInputElement | null>(null);
 
-function handleDelete() {
+function handleDelete(): void {
   showConfirm.value = true;
 }
 
-function confirmDelete() {
+function confirmDelete(): void {
   store.deleteTodo(props.todo.id);
   showConfirm.value = false;
   showToast('删除成功', 'success');
 }
 
-function startEdit() {
+function startEdit(): void {
   editContent.value = props.todo.content;
   isEditing.value = true;
   nextTick(() => {
@@ -36,12 +37,12 @@ function startEdit() {
   });
 }
 
-function cancelEdit() {
+function cancelEdit(): void {
   isEditing.value = false;
   editContent.value = '';
 }
 
-async function handleBlur() {
+async function handleBlur(): Promise<void> {
   const trimmedContent = editContent.value.trim();
   
   if (!trimmedContent) {
@@ -60,24 +61,18 @@ async function handleBlur() {
     await store.updateTodoContent(props.todo.id, trimmedContent);
     showToast('修改成功', 'success');
     isEditing.value = false;
-  } catch (e) {
+  } catch {
     showToast('修改失败', 'error');
     editContent.value = props.todo.content;
     isEditing.value = false;
   }
 }
 
-function handleEditKeydown(e: KeyboardEvent) {
+function handleEditKeydown(e: KeyboardEvent): void {
   if (e.key === 'Escape') {
     cancelEdit();
   }
 }
-
-const priorityLabels: Record<string, string> = {
-  high: '高',
-  medium: '中',
-  low: '低'
-};
 </script>
 
 <template>
@@ -110,26 +105,26 @@ const priorityLabels: Record<string, string> = {
       </template>
       <template v-else>
         <span class="todo-text">{{ todo.content }}</span>
-        <div class="todo-meta">
-          <span class="time">{{ formatTime(todo.created_at) }}</span>
-          <span 
-            v-if="store.priorityEnabled" 
-            class="priority-badge" 
-            :class="todo.priority"
-          >
-            {{ priorityLabels[todo.priority] }}
-          </span>
-        </div>
       </template>
     </div>
     
-    <div v-if="!isEditing" class="action-buttons">
-      <button class="edit-btn" @click.stop="startEdit" title="编辑" type="button">
-        <Icon name="edit" :size="14" />
-      </button>
-      <button class="delete-btn" @click.stop="handleDelete" title="删除" type="button">
-        <Icon name="close" :size="14" />
-      </button>
+    <div class="todo-meta" v-if="!isEditing">
+      <span 
+        v-if="store.priorityEnabled" 
+        class="priority-indicator"
+        :class="todo.priority"
+      >
+        {{ getPriorityLabel(todo.priority) }}
+      </span>
+      <span class="time">{{ formatTime(todo.created_at) }}</span>
+      <div class="action-buttons">
+        <button class="edit-btn" @click.stop="startEdit" title="编辑" type="button">
+          <Icon name="edit" :size="12" />
+        </button>
+        <button class="delete-btn" @click.stop="handleDelete" title="删除" type="button">
+          <Icon name="close" :size="12" />
+        </button>
+      </div>
     </div>
     
     <ConfirmDialog
@@ -146,33 +141,40 @@ const priorityLabels: Record<string, string> = {
 .todo-item {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 14px 16px;
-  background: var(--bg-primary);
-  border-radius: 12px;
+  gap: 12px;
+  padding: 10px 14px;
+  background: transparent;
+  border-radius: 8px;
   transition: all 0.2s;
-  border: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
   width: 100%;
   box-sizing: border-box;
   cursor: pointer;
 }
 
 .todo-item:hover {
-  border-color: var(--accent-color);
-  box-shadow: 0 2px 8px var(--accent-color-alpha);
+  background: var(--bg-primary);
+}
+
+.todo-item:hover .action-buttons {
+  opacity: 1;
+}
+
+.todo-item:last-child {
+  border-bottom: none;
 }
 
 .todo-item.completed .todo-text {
   text-decoration: line-through;
-  text-decoration-thickness: 1.5px;
+  text-decoration-thickness: 1px;
   color: var(--text-muted);
-  opacity: 0.8;
+  opacity: 0.7;
 }
 
 .checkbox-wrapper {
   position: relative;
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   flex-shrink: 0;
 }
 
@@ -189,8 +191,8 @@ const priorityLabels: Record<string, string> = {
   position: absolute;
   top: 0;
   left: 0;
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   border: 2px solid var(--border-color);
   border-radius: 50%;
   transition: all 0.2s;
@@ -210,8 +212,8 @@ const priorityLabels: Record<string, string> = {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 5px;
-  height: 9px;
+  width: 4px;
+  height: 8px;
   border: solid white;
   border-width: 0 2px 2px 0;
   transform: translate(-50%, -60%) rotate(45deg);
@@ -221,9 +223,6 @@ const priorityLabels: Record<string, string> = {
   flex: 1;
   min-width: 0;
   overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
 }
 
 .todo-text {
@@ -238,6 +237,7 @@ const priorityLabels: Record<string, string> = {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-shrink: 0;
 }
 
 .time {
@@ -245,33 +245,30 @@ const priorityLabels: Record<string, string> = {
   color: var(--text-muted);
 }
 
-.priority-badge {
-  font-size: 10px;
+.priority-indicator {
+  font-size: 11px;
+  font-weight: 600;
   padding: 2px 6px;
   border-radius: 4px;
-  font-weight: 500;
 }
 
-.priority-badge.high {
-  background: rgba(239, 68, 68, 0.15);
+.priority-indicator.high {
   color: var(--danger-color);
 }
 
-.priority-badge.medium {
-  background: rgba(245, 158, 11, 0.15);
+.priority-indicator.medium {
   color: var(--warning-color);
 }
 
-.priority-badge.low {
-  background: rgba(34, 197, 94, 0.15);
+.priority-indicator.low {
   color: var(--success-color);
 }
 
 .edit-input {
   width: 100%;
-  padding: 8px 12px;
+  padding: 6px 10px;
   border: 2px solid var(--accent-color);
-  border-radius: 8px;
+  border-radius: 6px;
   background: var(--bg-secondary);
   color: var(--text-primary);
   font-size: 14px;
@@ -281,28 +278,24 @@ const priorityLabels: Record<string, string> = {
 
 .action-buttons {
   display: flex;
-  gap: 4px;
-  flex-shrink: 0;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.15s;
 }
 
 .edit-btn {
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   border: none;
-  border-radius: 50%;
+  border-radius: 6px;
   background: transparent;
   color: var(--text-muted);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 0;
-  transition: all 0.2s;
+  transition: all 0.15s;
   flex-shrink: 0;
-}
-
-.todo-item:hover .edit-btn {
-  opacity: 1;
 }
 
 .edit-btn:hover {
@@ -311,23 +304,18 @@ const priorityLabels: Record<string, string> = {
 }
 
 .delete-btn {
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   border: none;
-  border-radius: 50%;
+  border-radius: 6px;
   background: transparent;
   color: var(--text-muted);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 0;
-  transition: all 0.2s;
+  transition: all 0.15s;
   flex-shrink: 0;
-}
-
-.todo-item:hover .delete-btn {
-  opacity: 1;
 }
 
 .delete-btn:hover {

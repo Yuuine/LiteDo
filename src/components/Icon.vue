@@ -11,6 +11,7 @@ type IconName =
   | 'edit'
   | 'chevron-left'
   | 'chevron-right'
+  | 'chevron-down'
   | 'check'
   | 'eye'
   | 'folder'
@@ -42,6 +43,7 @@ const iconPaths = computed(() => {
     edit: `<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>`,
     'chevron-left': `<polyline points="15 18 9 12 15 6"/>`,
     'chevron-right': `<polyline points="9 18 15 12 9 6"/>`,
+    'chevron-down': `<polyline points="6 9 12 15 18 9"/>`,
     check: `<polyline points="20 6 9 17 4 12"/>`,
     eye: `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`,
     folder: `<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>`,

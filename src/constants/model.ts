@@ -1,6 +1,21 @@
 export const STORAGE_KEYS = {
   MODEL_CONFIGS: 'model_configs',
+  APP_SETTINGS: 'app_settings',
 } as const;
+
+export const PRIORITY_CONFIG: Record<string, { label: string; color: string }> = {
+  high: { label: '高', color: 'var(--danger-color)' },
+  medium: { label: '中', color: 'var(--warning-color)' },
+  low: { label: '低', color: 'var(--success-color)' },
+};
+
+export const PRIORITY_ORDER: Record<string, number> = {
+  high: 0,
+  medium: 1,
+  low: 2,
+};
+
+export const DEFAULT_PRIORITY: 'medium' = 'medium';
 
 export const AI_PROMPTS = {
   TODO_PARSER: `你是一个待办事项解析助手。用户会给你一段描述任务的文本，你需要将其解析为结构化的待办事项列表。

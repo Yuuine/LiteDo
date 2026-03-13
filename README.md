@@ -7,7 +7,7 @@
 **简洁、高效的 Windows 桌面待办事项管理工具**
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.0.0-green.svg)](https://github.com/yuuine/litedo/releases)
+[![Version](https://img.shields.io/badge/version-1.1.1-green.svg)](https://github.com/yuuine/litedo/releases)
 [![Platform](https://img.shields.io/badge/platform-Windows-blue.svg)](https://github.com/yuuine/litedo/releases)
 [![Tauri](https://img.shields.io/badge/tauri-2.0-orange.svg)](https://tauri.app/)
 [![Vue](https://img.shields.io/badge/vue-3.5-brightgreen.svg)](https://vuejs.org/)
@@ -282,15 +282,18 @@ LiteDo/
 │   │   ├── AIDialog.vue        # AI 解析对话框
 │   │   ├── Calendar.vue        # 日历组件
 │   │   ├── ConfirmDialog.vue   # 确认对话框
-│   │   ├── Icon.vue            # 图标组件
-│   │   ├── Loading.vue         # 加载组件
-│   │   ├── Modal.vue           # 模态框组件
+│   │   ├── FilterTabs.vue      # 筛选标签组件（可复用）
+│   │   ├── Icon.vue            # 图标组件（可复用）
+│   │   ├── Loading.vue         # 加载组件（可复用）
+│   │   ├── Modal.vue           # 模态框组件（可复用）
 │   │   ├── OperationLogViewer.vue # 操作日志查看器
+│   │   ├── PrioritySelector.vue # 优先级选择器（可复用）
 │   │   ├── SettingsPanel.vue   # 设置面板
+│   │   ├── TaskInput.vue       # 任务输入组件（可复用）
 │   │   ├── Toast.vue           # 消息提示组件
 │   │   └── TodoItem.vue        # 待办事项组件
 │   ├── constants/              # 常量定义
-│   │   └── model.ts            # AI 模型相关常量
+│   │   └── model.ts            # AI 模型相关常量、优先级配置
 │   ├── services/               # 服务层
 │   │   ├── api.ts              # Tauri API 封装
 │   │   └── openaiApi.ts        # OpenAI API 封装
@@ -302,12 +305,13 @@ LiteDo/
 │   ├── types/                  # TypeScript 类型定义
 │   │   ├── global.d.ts         # 全局类型声明
 │   │   ├── model.ts            # AI 模型类型
-│   │   └── todo.ts             # 待办事项类型
+│   │   └── todo.ts             # 待办事项类型、优先级类型
 │   ├── utils/                  # 工具函数
 │   │   ├── crypto.ts           # 加密工具
 │   │   ├── dateUtils.ts        # 日期处理工具
 │   │   ├── loading.ts          # 加载状态工具
 │   │   ├── logger.ts           # 日志工具
+│   │   ├── priority.ts         # 优先级工具函数
 │   │   └── toast.ts            # 消息提示工具
 │   ├── App.vue                 # 根组件
 │   └── main.ts                 # 应用入口
@@ -345,11 +349,11 @@ LiteDo/
 
 ### 最新版本
 
-**[1.0.0] - 2026-03-13**
+**[1.1.1] - 2026-03-14**
 
-- ✨ 核心功能：任务管理、日期筛选、主题自定义
-- 🤖 AI 功能：多模型支持、自然语言解析
-- 📋 日志系统：操作日志、调试日志、系统日志
+- ✨ 新增功能：任务优先级设置、任务编辑、AI首次使用引导
+- 🎨 UI优化：一体化输入栏、列表压缩、筛选标签优化
+- 🛠️ 技术改进：组件重构、性能优化、代码规范
 
 ---
 

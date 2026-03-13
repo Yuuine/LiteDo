@@ -8,76 +8,73 @@ import AIDialog from './components/AIDialog.vue';
 import Toast from './components/Toast.vue';
 import Loading from './components/Loading.vue';
 import Icon from './components/Icon.vue';
+import TaskInput from './components/TaskInput.vue';
+import FilterTabs from './components/FilterTabs.vue';
 import logger, { system } from './utils/logger';
 import { formatDate } from './utils/dateUtils';
 import { showToast } from './utils/toast';
 import type { PriorityType } from './types/todo';
+import { getDefaultPriority } from './utils/priority';
 
 const store = useTodoStore();
+
 const showCalendar = ref(false);
 const showSettings = ref(false);
 const showAIDialog = ref(false);
-const newTaskContent = ref('');
 const isSubmitting = ref(false);
-const selectedPriority = ref<PriorityType>('medium');
 
-const priorityOptions: { value: PriorityType; label: string }[] = [
-  { value: 'high', label: '高' },
-  { value: 'medium', label: '中' },
-  { value: 'low', label: '低' },
-];
+const taskInputRef = ref<InstanceType<typeof TaskInput> | null>(null);
+const selectedPriority = ref<PriorityType>(getDefaultPriority());
 
-function handleKeydown(e: KeyboardEvent) {
+function closeAllModals(): void {
+  showCalendar.value = false;
+  showSettings.value = false;
+  showAIDialog.value = false;
+}
+
+function handleKeydown(e: KeyboardEvent): void {
   if (e.key === 'Escape') {
-    showCalendar.value = false;
-    showSettings.value = false;
-    showAIDialog.value = false;
+    closeAllModals();
   }
 }
 
-async function handleAddTask() {
-  const text = newTaskContent.value.trim();
-  await logger.debug('App', 'handleAddTask called', { text, isSubmitting: isSubmitting.value, textLength: text.length });
-  
-  if (!text || isSubmitting.value) {
-    await logger.debug('App', 'handleAddTask early return', { hasText: !!text, isSubmitting: isSubmitting.value });
-    return;
-  }
+async function handleAddTask(content: string, priority: PriorityType): Promise<void> {
+  if (isSubmitting.value) return;
   
   isSubmitting.value = true;
   const createdTimestamp = Math.floor(store.selectedDate.getTime() / 1000);
-  await logger.debug('App', 'Adding task', { text, createdTimestamp, selectedDate: store.selectedDate.toISOString() });
+  
+  await logger.debug('App', 'Adding task', { content, createdTimestamp, selectedDate: store.selectedDate.toISOString() });
   
   try {
-    await store.addTodoWithDate(text, createdTimestamp, selectedPriority.value);
-    await logger.info('App', 'Task added successfully', { text, timestamp: createdTimestamp });
+    await store.addTodoWithDate(content, createdTimestamp, priority);
+    await logger.info('App', 'Task added successfully', { content, timestamp: createdTimestamp });
     showToast('任务添加成功');
-    newTaskContent.value = '';
-    selectedPriority.value = 'medium';
+    selectedPriority.value = getDefaultPriority();
   } catch (e) {
-    await logger.error('App', 'Failed to add todo', { error: e, text });
+    await logger.error('App', 'Failed to add todo', { error: e, content });
     showToast('添加失败，请重试', 'error');
   } finally {
     isSubmitting.value = false;
   }
 }
 
-async function handleOpenCalendar() {
+async function handleOpenCalendar(): Promise<void> {
   showCalendar.value = true;
   await system('点击操作', '日期选择按钮', '用户点击打开日历选择器');
 }
 
-async function handleOpenSettings() {
+async function handleOpenSettings(): Promise<void> {
   showSettings.value = true;
   await system('点击操作', '设置按钮', '用户点击打开设置面板');
 }
 
-async function handleOpenAI() {
+async function handleOpenAI(): Promise<void> {
   showAIDialog.value = true;
   await system('点击操作', 'AI按钮', '用户点击打开AI解析对话框');
 }
 
-async function handleSelectDate(date: Date) {
+async function handleSelectDate(date: Date): Promise<void> {
   await logger.debug('App', 'Date selected', { date: date.toISOString() });
   store.setSelectedDate(date);
   showCalendar.value = false;
@@ -102,7 +99,6 @@ onUnmounted(() => {
         <button class="date-btn" @click="handleOpenCalendar" type="button">
           <Icon name="calendar" :size="18" />
           <span class="date-text">{{ formatDate(store.selectedDate) }}</span>
-          <span class="task-count">{{ store.selectedDateStats.active }} 项待办</span>
         </button>
       </div>
       <div class="header-right">
@@ -118,64 +114,19 @@ onUnmounted(() => {
     
     <main class="main">
       <div class="add-task-section">
-        <form class="add-task-form" @submit.prevent="handleAddTask">
-          <div class="input-wrapper">
-            <input
-              v-model="newTaskContent"
-              type="text"
-              placeholder="添加新任务"
-              class="task-input"
-            />
-          </div>
-          <div v-if="store.priorityEnabled" class="priority-selector">
-            <button
-              v-for="option in priorityOptions"
-              :key="option.value"
-              type="button"
-              class="priority-btn"
-              :class="[option.value, { active: selectedPriority === option.value }]"
-              @click.stop="selectedPriority = option.value"
-            >
-              {{ option.label }}
-            </button>
-          </div>
-          <button 
-            type="submit" 
-            class="btn-add" 
-            :disabled="!newTaskContent.trim() || isSubmitting"
-            title="添加任务"
-          >
-            <Icon name="plus" :size="20" :stroke-width="2.5" />
-          </button>
-        </form>
+        <TaskInput
+          ref="taskInputRef"
+          :disabled="isSubmitting"
+          :show-priority="store.priorityEnabled"
+          @submit="handleAddTask"
+        />
       </div>
       
-      <nav class="filter-tabs">
-        <button 
-          class="tab" 
-          :class="{ active: store.filter === 'all' }" 
-          @click="store.setFilter('all')"
-          type="button"
-        >
-          全部 {{ store.selectedDateStats.total }}
-        </button>
-        <button 
-          class="tab" 
-          :class="{ active: store.filter === 'active' }" 
-          @click="store.setFilter('active')"
-          type="button"
-        >
-          待办 {{ store.selectedDateStats.active }}
-        </button>
-        <button 
-          class="tab" 
-          :class="{ active: store.filter === 'completed' }" 
-          @click="store.setFilter('completed')"
-          type="button"
-        >
-          完成 {{ store.selectedDateStats.completed }}
-        </button>
-      </nav>
+      <FilterTabs
+        :model-value="store.filter"
+        :stats="store.selectedDateStats"
+        @update:model-value="store.setFilter"
+      />
       
       <section class="todo-list" v-if="store.filteredTodos.length">
         <TransitionGroup name="list">
@@ -225,7 +176,7 @@ onUnmounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 24px;
+  padding: 12px 20px;
   background: var(--bg-primary);
   border-bottom: 1px solid var(--border-color);
   flex-shrink: 0;
@@ -244,10 +195,10 @@ onUnmounted(() => {
 .date-btn {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 16px;
+  gap: 8px;
+  padding: 8px 14px;
   border: none;
-  border-radius: 12px;
+  border-radius: 10px;
   background: var(--bg-secondary);
   color: var(--text-primary);
   cursor: pointer;
@@ -259,13 +210,8 @@ onUnmounted(() => {
 }
 
 .date-text {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
-}
-
-.task-count {
-  font-size: 13px;
-  color: var(--text-muted);
 }
 
 .ai-btn {
@@ -279,7 +225,7 @@ onUnmounted(() => {
   color: white;
   border: none;
   border-radius: 10px;
-  padding: 6px 16px;
+  padding: 6px 14px;
   transition: all 0.2s;
 }
 
@@ -289,10 +235,10 @@ onUnmounted(() => {
 }
 
 .settings-btn {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border: none;
-  border-radius: 12px;
+  border-radius: 10px;
   background: var(--bg-secondary);
   color: var(--text-muted);
   cursor: pointer;
@@ -309,7 +255,7 @@ onUnmounted(() => {
 
 .main {
   flex: 1;
-  padding: 20px 24px;
+  padding: 16px 20px;
   overflow-y: scroll;
   display: flex;
   flex-direction: column;
@@ -317,148 +263,18 @@ onUnmounted(() => {
 }
 
 .add-task-section {
-  margin-bottom: 20px;
+  margin-bottom: 12px;
   flex-shrink: 0;
-}
-
-.add-task-form {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-
-.input-wrapper {
-  flex: 1;
-  position: relative;
-}
-
-.task-input {
-  width: 100%;
-  padding: 14px 16px;
-  padding-right: 60px;
-  border: 2px solid var(--border-color);
-  border-radius: 12px;
-  background: var(--bg-primary);
-  color: var(--text-primary);
-  font-size: 15px;
-  outline: none;
-  transition: all 0.2s;
-  box-sizing: border-box;
-}
-
-.task-input:focus {
-  border-color: var(--accent-color);
-}
-
-.task-input::placeholder {
-  color: var(--text-muted);
-}
-
-.priority-selector {
-  display: flex;
-  gap: 4px;
-  flex-shrink: 0;
-}
-
-.priority-btn {
-  width: 32px;
-  height: 32px;
-  border: 2px solid var(--border-color);
-  border-radius: 8px;
-  background: var(--bg-primary);
-  color: var(--text-muted);
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.priority-btn:hover {
-  border-color: var(--text-muted);
-}
-
-.priority-btn.high.active {
-  background: rgba(239, 68, 68, 0.15);
-  border-color: var(--danger-color);
-  color: var(--danger-color);
-}
-
-.priority-btn.medium.active {
-  background: rgba(245, 158, 11, 0.15);
-  border-color: var(--warning-color);
-  color: var(--warning-color);
-}
-
-.priority-btn.low.active {
-  background: rgba(34, 197, 94, 0.15);
-  border-color: var(--success-color);
-  color: var(--success-color);
-}
-
-.btn-add {
-  width: 48px;
-  height: 48px;
-  border: none;
-  border-radius: 12px;
-  background: var(--accent-color);
-  color: white;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-  flex-shrink: 0;
-}
-
-.btn-add:hover:not(:disabled) {
-  transform: scale(1.05);
-  opacity: 0.9;
-}
-
-.btn-add:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.filter-tabs {
-  display: flex;
-  gap: 4px;
-  margin-bottom: 16px;
-  background: var(--bg-primary);
-  padding: 4px;
-  border-radius: 10px;
-  flex-shrink: 0;
-}
-
-.tab {
-  flex: 1;
-  padding: 8px 16px;
-  border: none;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--text-muted);
-  font-size: 13px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.tab:hover {
-  color: var(--text-primary);
-}
-
-.tab.active {
-  background: var(--accent-color);
-  color: white;
 }
 
 .todo-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
   flex: 1;
+  background: var(--bg-primary);
+  border-radius: 10px;
+  padding: 4px 0;
+  border: 1px solid var(--border-color);
 }
 
 .list-enter-active,
