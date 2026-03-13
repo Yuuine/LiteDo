@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![LiteDo Logo](./screenshots/logo.svg)
+<img src="./screenshots/logo.svg" alt="LiteDo Logo" width="200">
 
 **简洁、高效的 Windows 桌面待办事项管理工具**
 
