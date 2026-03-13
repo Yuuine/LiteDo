@@ -103,7 +103,7 @@ onUnmounted(() => {
             <input
               v-model="newTaskContent"
               type="text"
-              :placeholder="`添加新任务（最多${store.maxTodoLength}字）...`"
+              :placeholder="`添加新任务（最多${store.maxTodoLength}字）`"
               class="task-input"
               :maxlength="store.maxTodoLength"
             />

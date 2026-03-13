@@ -23,7 +23,20 @@ const store = useTodoStore();
 const settings = ref({
   autoStart: false,
   maxTodoLength: 30,
+  themeColor: '#6366f1',
 });
+
+const presetColors = [
+  { name: '靛蓝', color: '#6366f1' },
+  { name: '紫罗兰', color: '#8b5cf6' },
+  { name: '玫红', color: '#ec4899' },
+  { name: '红色', color: '#ef4444' },
+  { name: '橙色', color: '#f97316' },
+  { name: '黄色', color: '#eab308' },
+  { name: '绿色', color: '#22c55e' },
+  { name: '青色', color: '#06b6d4' },
+  { name: '蓝色', color: '#3b82f6' },
+];
 
 const showOperationLog = ref(false);
 
@@ -37,9 +50,19 @@ async function loadSettings() {
     if (savedSettings) {
       settings.value = { ...settings.value, ...JSON.parse(savedSettings) };
     }
+    applyThemeColor(settings.value.themeColor);
   } catch (e) {
     console.error('Failed to load settings:', e);
   }
+}
+
+function applyThemeColor(color: string) {
+  document.documentElement.style.setProperty('--accent-color', color);
+}
+
+function selectColor(color: string) {
+  settings.value.themeColor = color;
+  applyThemeColor(color);
 }
 
 async function handleSave() {
@@ -48,6 +71,7 @@ async function handleSave() {
     const oldSettings = oldSettingsStr ? JSON.parse(oldSettingsStr) : {};
     const oldMaxTodoLength = oldSettings.maxTodoLength || 30;
     const oldAutoStart = oldSettings.autoStart || false;
+    const oldThemeColor = oldSettings.themeColor || '#6366f1';
     
     localStorage.setItem('app_settings', JSON.stringify(settings.value));
     store.maxTodoLength = settings.value.maxTodoLength;
@@ -58,6 +82,9 @@ async function handleSave() {
     }
     if (settings.value.maxTodoLength !== oldMaxTodoLength) {
       changes.push(`字数限制: ${oldMaxTodoLength}字 → ${settings.value.maxTodoLength}字`);
+    }
+    if (settings.value.themeColor !== oldThemeColor) {
+      changes.push(`主题颜色: ${oldThemeColor} → ${settings.value.themeColor}`);
     }
     
     if (changes.length > 0) {
@@ -130,7 +157,6 @@ async function openDebugLogLocation() {
             <div class="setting-item">
               <div class="setting-info">
                 <span class="setting-label">开机自启动</span>
-                <span class="setting-desc">系统启动时自动运行应用</span>
               </div>
               <label class="toggle">
                 <input type="checkbox" v-model="settings.autoStart" />
@@ -149,6 +175,40 @@ async function openDebugLogLocation() {
                 max="200"
                 class="number-input"
               />
+            </div>
+            
+            <div class="setting-item theme-color-setting">
+              <div class="setting-info">
+                <span class="setting-label">主题颜色</span>
+              </div>
+              <div class="theme-colors">
+                <button
+                  v-for="preset in presetColors"
+                  :key="preset.color"
+                  class="color-btn"
+                  :class="{ active: settings.themeColor === preset.color }"
+                  :style="{ backgroundColor: preset.color }"
+                  :title="preset.name"
+                  @click="selectColor(preset.color)"
+                  type="button"
+                >
+                  <svg v-if="settings.themeColor === preset.color" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                </button>
+                <label class="color-btn custom-color" :style="{ backgroundColor: settings.themeColor }" title="自定义颜色">
+                  <input
+                    type="color"
+                    v-model="settings.themeColor"
+                    @input="applyThemeColor(settings.themeColor)"
+                    class="color-picker"
+                  />
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+                  </svg>
+                </label>
+              </div>
             </div>
           </section>
           
@@ -470,5 +530,56 @@ async function openDebugLogLocation() {
 .number-input::-webkit-inner-spin-button,
 .number-input::-webkit-outer-spin-button {
   opacity: 1;
+}
+
+.theme-color-setting {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.theme-colors {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.color-btn {
+  width: 36px;
+  height: 36px;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.color-btn:hover {
+  transform: scale(1.1);
+  border-color: var(--text-primary);
+}
+
+.color-btn.active {
+  border-color: var(--text-primary);
+  box-shadow: 0 0 0 2px var(--bg-primary), 0 0 0 4px var(--text-primary);
+}
+
+.custom-color {
+  position: relative;
+  overflow: hidden;
+}
+
+.color-picker {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
 }
 </style>
