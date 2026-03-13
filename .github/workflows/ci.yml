@@ -1,5 +1,4 @@
 name: CI
-
 on:
   push:
     branches:
@@ -13,7 +12,6 @@ on:
         description: 'Reason for running CI'
         required: false
         default: 'manual trigger'
-
 jobs:
   lint:
     name: Lint & Type Check
@@ -21,22 +19,15 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
-
       - name: Install dependencies
-        run: |
-            npm ci
-
+        run: npm ci
       - name: Run TypeScript type check
-        run: |
-            npm run build
-          continue-on-error: false
-
+        run: npm run build
   build:
     name: Build Tauri App
     runs-on: windows-latest
@@ -44,29 +35,21 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
-
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
-
       - name: Install dependencies
-        run: |
-            npm ci
-
+        run: npm ci
       - name: Build application
-        run: |
-            npm run tauri build
-          env:
-            TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
-          continue-on-error: false
-
+        run: npm run tauri build
+        env:
+          TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
