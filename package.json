@@ -9,6 +9,8 @@
     "preview": "vite preview",
     "tauri": "tauri",
     "clean": "node scripts/clean-before-release.js",
+    "clean:deep": "node scripts/deep-clean.js",
+    "clean:all": "npm run clean:deep && npm run clean",
     "prebuild": "npm run clean"
   },
   "dependencies": {
