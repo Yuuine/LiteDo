@@ -150,7 +150,7 @@ npm run clean:all
 
 ```mermaid
 flowchart TB
-    subgraph Client["🖥️ 客户端层 (Windows Desktop)"]
+    subgraph Client["🖥️ 客户端 (Windows)"]
         UI["Vue 3 组件<br/>────────────<br/>App.vue<br/>TodoItem.vue<br/>Calendar.vue<br/>SettingsPanel.vue<br/>AIDialog.vue"]
         Store["Pinia 状态管理<br/>────────────<br/>todoStore<br/>modelStore"]
         Utils["工具函数<br/>────────────<br/>dateUtils<br/>logger<br/>crypto<br/>toast<br/>loading"]

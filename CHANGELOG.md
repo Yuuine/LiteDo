@@ -170,4 +170,4 @@
 
 ---
 
-**完整发布历史**：查看 [GitHub Releases](https://github.com/yourusername/litedo/releases)
+**完整发布历史**：查看 [GitHub Releases](https://github.com/yuuine/litedo/releases)
