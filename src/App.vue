@@ -5,7 +5,7 @@ import Calendar from './components/Calendar.vue';
 import TodoItem from './components/TodoItem.vue';
 import SettingsPanel from './components/SettingsPanel.vue';
 import Toast from './components/Toast.vue';
-import logger from './utils/logger';
+import logger, { system } from './utils/logger';
 import { formatDate } from './utils/dateUtils';
 
 const store = useTodoStore();
@@ -33,7 +33,7 @@ function handleKeydown(e: KeyboardEvent) {
 
 async function handleAddTask() {
   const text = newTaskContent.value.trim();
-  await logger.debug('App', 'handleAddTask called', { text, isSubmitting: isSubmitting.value });
+  await logger.debug('App', 'handleAddTask called', { text, isSubmitting: isSubmitting.value, textLength: text.length });
   
   if (!text || isSubmitting.value) {
     await logger.debug('App', 'handleAddTask early return', { hasText: !!text, isSubmitting: isSubmitting.value });
@@ -41,6 +41,7 @@ async function handleAddTask() {
   }
   
   if (text.length > store.maxTodoLength) {
+    await logger.warn('App', 'Task content exceeds max length', { textLength: text.length, maxAllowed: store.maxTodoLength });
     showToast(`待办事项字数超过限制（最多${store.maxTodoLength}字）`, 'error');
     return;
   }
@@ -51,17 +52,36 @@ async function handleAddTask() {
   
   try {
     await store.addTodoWithDate(text, createdTimestamp);
+    await logger.info('App', 'Task added successfully', { text, timestamp: createdTimestamp });
     showToast('任务添加成功');
     newTaskContent.value = '';
   } catch (e) {
-    await logger.error('App', 'Failed to add todo', e);
+    await logger.error('App', 'Failed to add todo', { error: e, text });
     showToast('添加失败，请重试', 'error');
   } finally {
     isSubmitting.value = false;
   }
 }
 
+async function handleOpenCalendar() {
+  showCalendar.value = true;
+  await system('点击操作', '日期选择按钮', '用户点击打开日历选择器');
+}
+
+async function handleOpenSettings() {
+  showSettings.value = true;
+  await system('点击操作', '设置按钮', '用户点击打开设置面板');
+}
+
+async function handleSelectDate(date: Date) {
+  await logger.debug('App', 'Date selected', { date: date.toISOString() });
+  store.setSelectedDate(date);
+  showCalendar.value = false;
+  await system('点击操作', '日历日期选择', `用户选择了日期: ${formatDate(date)}`);
+}
+
 onMounted(async () => {
+  await logger.info('App', 'Application mounted', { timestamp: new Date().toISOString() });
   await store.loadTodos();
   window.addEventListener('keydown', handleKeydown);
 });
@@ -75,7 +95,7 @@ onUnmounted(() => {
   <div class="app">
     <header class="header">
       <div class="header-left">
-        <button class="date-btn" @click="showCalendar = true" type="button">
+        <button class="date-btn" @click="handleOpenCalendar" type="button">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
             <line x1="16" y1="2" x2="16" y2="6"/>
@@ -87,7 +107,7 @@ onUnmounted(() => {
         </button>
       </div>
       <div class="header-right">
-        <button class="settings-btn" @click="showSettings = true" title="设置" type="button">
+        <button class="settings-btn" @click="handleOpenSettings" title="设置" type="button">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="3"/>
             <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
@@ -173,7 +193,7 @@ onUnmounted(() => {
         <div class="calendar-modal" @click.stop>
           <Calendar 
             :selected-date="store.selectedDate" 
-            @select-date="(date: Date) => { store.setSelectedDate(date); showCalendar = false; }" 
+            @select-date="handleSelectDate" 
           />
         </div>
       </div>

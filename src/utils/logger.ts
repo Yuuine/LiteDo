@@ -23,6 +23,13 @@ export interface OperationLog {
   result: string;
 }
 
+export interface SystemLog {
+  timestamp: string;
+  action: string;
+  target: string;
+  details: string;
+}
+
 let currentTraceId: string | null = null;
 
 function generateTraceId(): string {
@@ -80,6 +87,18 @@ async function writeOperationLog(
   }
 }
 
+async function writeSystemLog(
+  action: string,
+  target: string,
+  details: string
+): Promise<void> {
+  try {
+    await invoke('write_system_log', { action, target, details });
+  } catch (e) {
+    console.error('Failed to write system log:', e);
+  }
+}
+
 export async function debug(category: string, message: string, data?: unknown): Promise<void> {
   await writeDebugLog('debug', category, message, data);
 }
@@ -103,6 +122,14 @@ export async function operation(
   result: string = '成功'
 ): Promise<void> {
   await writeOperationLog(operationType, operationObject, description, result);
+}
+
+export async function system(
+  action: string,
+  target: string,
+  details: string
+): Promise<void> {
+  await writeSystemLog(action, target, details);
 }
 
 export async function time<T>(category: string, message: string, fn: () => Promise<T>): Promise<T> {
@@ -170,6 +197,7 @@ export default {
   warn,
   error,
   operation,
+  system,
   time,
   startTrace,
   endTrace,

@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue';
 import { useTodoStore } from '../stores/todoStore';
 import OperationLogViewer from './OperationLogViewer.vue';
-import { operation } from '../utils/logger';
+import { operation, system } from '../utils/logger';
 
 declare global {
   interface WindowEventMap {
@@ -105,7 +105,7 @@ async function handleSave() {
 
 async function viewOperationLog() {
   showOperationLog.value = true;
-  await operation('日志管理', '操作日志', '查看操作日志', '成功');
+  await system('点击操作', '查看操作日志按钮', '用户点击查看操作日志按钮');
 }
 
 async function openOperationLogLocation() {
@@ -116,10 +116,10 @@ async function openOperationLogLocation() {
     const operationLogPath = `${appDir}\\operation.log`;
     
     await invoke('open_file_location', { path: operationLogPath });
-    await operation('日志管理', '操作日志', '打开操作日志文件位置', '成功');
+    await system('点击操作', '打开操作日志位置按钮', '用户点击打开操作日志文件位置');
   } catch (e) {
     console.error('Failed to open operation log location:', e);
-    await operation('日志管理', '操作日志', '打开操作日志文件位置失败', '失败');
+    await system('错误', '打开操作日志位置失败', `错误信息: ${e}`);
     alert('无法打开操作日志文件位置: ' + e);
   }
 }
@@ -128,10 +128,10 @@ async function openDebugLogLocation() {
   try {
     const { invoke } = await import('@tauri-apps/api/core');
     await invoke('open_log_file_location');
-    await operation('日志管理', '调试日志', '打开调试日志文件位置', '成功');
+    await system('点击操作', '打开调试日志位置按钮', '用户点击打开调试日志文件位置');
   } catch (e) {
     console.error('Failed to open debug log location:', e);
-    await operation('日志管理', '调试日志', '打开调试日志文件位置失败', '失败');
+    await system('错误', '打开调试日志位置失败', `错误信息: ${e}`);
     alert('无法打开调试日志文件位置: ' + e);
   }
 }

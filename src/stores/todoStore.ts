@@ -72,21 +72,32 @@ export const useTodoStore = defineStore('todo', () => {
 
   async function loadTodos() {
     isLoading.value = true;
+    await logger.debug('Store', 'loadTodos started', { timestamp: new Date().toISOString() });
     try {
       todos.value = await api.getTodos();
-      await logger.debug('Store', 'Todos loaded successfully', { count: todos.value.length });
+      await logger.info('Store', 'Todos loaded successfully', { 
+        count: todos.value.length,
+        activeCount: todos.value.filter(t => !t.completed).length,
+        completedCount: todos.value.filter(t => t.completed).length
+      });
     } catch (e) {
-      await logger.error('Store', 'Failed to load todos', e);
+      await logger.error('Store', 'Failed to load todos', { error: e, timestamp: new Date().toISOString() });
     } finally {
       isLoading.value = false;
     }
   }
 
   async function addTodoWithDate(content: string, createdAt: number) {
-    await logger.debug('Store', 'addTodoWithDate called', { content, createdAt });
+    await logger.debug('Store', 'addTodoWithDate called', { 
+      content, 
+      createdAt,
+      contentLength: content.length,
+      maxAllowed: maxTodoLength.value 
+    });
     
     if (content.length > maxTodoLength.value) {
       const error = `待办事项字数超过限制（最多${maxTodoLength.value}字）`;
+      await logger.warn('Store', 'Task content exceeds limit', { contentLength: content.length, maxAllowed: maxTodoLength.value });
       await operation('任务管理', '任务', `添加任务失败: 字数超限`, '失败');
       throw new Error(error);
     }
@@ -94,50 +105,86 @@ export const useTodoStore = defineStore('todo', () => {
     try {
       const maxOrder = todos.value.reduce((max, t) => Math.max(max, t.sort_order), 0);
       const sortOrder = maxOrder + 1;
+      await logger.debug('Store', 'Creating todo with sort order', { sortOrder, totalTodos: todos.value.length });
+      
       const todo = await api.addTodoWithDate(content, sortOrder, createdAt);
       todos.value.unshift(todo);
       
       await operation('任务管理', '任务', `添加任务: ${content}`, '成功');
-      await logger.info('Store', 'Todo added successfully', { id: todo.id, content });
+      await logger.info('Store', 'Todo added successfully', { 
+        id: todo.id, 
+        content,
+        sortOrder,
+        createdAt,
+        totalTodos: todos.value.length
+      });
       
       return todo;
     } catch (e) {
       await operation('任务管理', '任务', `添加任务失败: ${content}`, '失败');
-      await logger.error('Store', 'addTodoWithDate failed', e);
+      await logger.error('Store', 'addTodoWithDate failed', { error: e, content, createdAt });
       throw e;
     }
   }
 
   async function toggleTodo(id: string) {
     const todo = todos.value.find(t => t.id === id);
-    if (!todo) return;
+    if (!todo) {
+      await logger.warn('Store', 'Todo not found for toggle', { id });
+      return;
+    }
+    
+    await logger.debug('Store', 'toggleTodo called', { 
+      id, 
+      currentStatus: todo.completed,
+      willChangeTo: !todo.completed 
+    });
     
     try {
       await api.toggleTodo(id, !todo.completed);
+      const oldStatus = todo.completed;
       todo.completed = !todo.completed;
       todo.completed_at = todo.completed ? Math.floor(Date.now() / 1000) : null;
       
       await operation('任务管理', '任务', `${todo.completed ? '完成' : '重新打开'}任务: ${todo.content}`, '成功');
-      await logger.debug('Store', 'Todo toggled', { id, completed: todo.completed });
+      await logger.info('Store', 'Todo toggled successfully', { 
+        id, 
+        oldStatus,
+        newStatus: todo.completed,
+        completedAt: todo.completed_at
+      });
     } catch (e) {
       await operation('任务管理', '任务', `切换任务状态失败`, '失败');
-      await logger.error('Store', 'Failed to toggle todo', e);
+      await logger.error('Store', 'Failed to toggle todo', { error: e, id, currentStatus: todo.completed });
     }
   }
 
   async function deleteTodo(id: string) {
     const todo = todos.value.find(t => t.id === id);
-    if (!todo) return;
+    if (!todo) {
+      await logger.warn('Store', 'Todo not found for deletion', { id });
+      return;
+    }
+    
+    await logger.debug('Store', 'deleteTodo called', { 
+      id, 
+      content: todo.content,
+      totalTodos: todos.value.length 
+    });
     
     try {
       await api.deleteTodo(id);
       todos.value = todos.value.filter(t => t.id !== id);
       
       await operation('任务管理', '任务', `删除任务: ${todo.content}`, '成功');
-      await logger.debug('Store', 'Todo deleted', { id });
+      await logger.info('Store', 'Todo deleted successfully', { 
+        id, 
+        content: todo.content,
+        remainingTodos: todos.value.length
+      });
     } catch (e) {
       await operation('任务管理', '任务', `删除任务失败`, '失败');
-      await logger.error('Store', 'Failed to delete todo', e);
+      await logger.error('Store', 'Failed to delete todo', { error: e, id, content: todo.content });
     }
   }
 

@@ -1,6 +1,7 @@
 mod commands;
 mod debug_log;
 mod operation_log;
+mod system_log;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -27,7 +28,11 @@ pub fn run() {
             operation_log::write_operation_log,
             operation_log::get_operation_logs,
             operation_log::clear_operation_logs,
-            operation_log::get_operation_log_path_cmd
+            operation_log::get_operation_log_path_cmd,
+            system_log::write_system_log,
+            system_log::get_system_logs,
+            system_log::clear_system_logs,
+            system_log::get_system_log_path_cmd
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
