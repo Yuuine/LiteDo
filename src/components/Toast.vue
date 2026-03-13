@@ -56,11 +56,13 @@ defineExpose({ addToast });
 .toast-container {
   position: fixed;
   top: 20px;
-  right: 20px;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 2000;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  align-items: center;
 }
 
 .toast {
@@ -69,7 +71,8 @@ defineExpose({ addToast });
   font-size: 14px;
   color: white;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  animation: slideIn 0.3s ease;
+  animation: slideDown 0.3s ease;
+  white-space: nowrap;
 }
 
 .toast.success {
@@ -84,14 +87,14 @@ defineExpose({ addToast });
   background: var(--accent-color);
 }
 
-@keyframes slideIn {
+@keyframes slideDown {
   from {
     opacity: 0;
-    transform: translateX(100%);
+    transform: translateY(-20px);
   }
   to {
     opacity: 1;
-    transform: translateX(0);
+    transform: translateY(0);
   }
 }
 
@@ -102,11 +105,11 @@ defineExpose({ addToast });
 
 .toast-enter-from {
   opacity: 0;
-  transform: translateX(100%);
+  transform: translateY(-20px);
 }
 
 .toast-leave-to {
   opacity: 0;
-  transform: translateX(100%);
+  transform: translateY(-20px);
 }
 </style>

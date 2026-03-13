@@ -7,7 +7,7 @@
 **简洁、高效的 Windows 桌面待办事项管理工具**
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.1.1-green.svg)](https://github.com/yuuine/litedo/releases)
+[![Version](https://img.shields.io/badge/version-1.1.2-green.svg)](https://github.com/yuuine/litedo/releases)
 [![Platform](https://img.shields.io/badge/platform-Windows-blue.svg)](https://github.com/yuuine/litedo/releases)
 [![Tauri](https://img.shields.io/badge/tauri-2.0-orange.svg)](https://tauri.app/)
 [![Vue](https://img.shields.io/badge/vue-3.5-brightgreen.svg)](https://vuejs.org/)

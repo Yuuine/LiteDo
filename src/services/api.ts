@@ -2,13 +2,6 @@ import { invoke } from '@tauri-apps/api/core';
 import type { Todo, PriorityType } from '../types/todo';
 import logger from '../utils/logger';
 
-export interface LogEntry {
-  id: string;
-  action: string;
-  todo_content: string | null;
-  created_at: number;
-}
-
 export async function getTodos(): Promise<Todo[]> {
   logger.info('API', 'Fetching todos');
   try {
@@ -17,22 +10,6 @@ export async function getTodos(): Promise<Todo[]> {
     return result;
   } catch (e) {
     logger.error('API', 'Failed to fetch todos', e);
-    throw e;
-  }
-}
-
-export async function addTodo(content: string, sortOrder: number): Promise<Todo> {
-  logger.info('API', 'Adding todo', { content, sortOrder });
-  try {
-    const result = await invoke<Todo>('add_todo', { 
-      content, 
-      priority: 'medium', 
-      sortOrder 
-    });
-    logger.info('API', 'Added todo successfully', result);
-    return result;
-  } catch (e) {
-    logger.error('API', 'Failed to add todo', e);
     throw e;
   }
 }
@@ -90,18 +67,6 @@ export async function updateTodoOrder(id: string, sortOrder: number): Promise<vo
     logger.info('API', 'Updated todo order successfully');
   } catch (e) {
     logger.error('API', 'Failed to update todo order', e);
-    throw e;
-  }
-}
-
-export async function getLogs(): Promise<LogEntry[]> {
-  logger.info('API', 'Fetching logs');
-  try {
-    const result = await invoke<LogEntry[]>('get_logs');
-    logger.info('API', 'Fetched logs successfully', { count: result.length });
-    return result;
-  } catch (e) {
-    logger.error('API', 'Failed to fetch logs', e);
     throw e;
   }
 }

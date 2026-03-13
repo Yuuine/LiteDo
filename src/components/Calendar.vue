@@ -51,7 +51,7 @@ const calendarDays = computed((): CalendarDay[] => {
       isCurrentMonth: false,
       isToday: false,
       isSelected: isSameDay(date, props.selectedDate),
-      isFuture: false
+      isFuture: date > today
     });
   }
   
@@ -76,7 +76,7 @@ const calendarDays = computed((): CalendarDay[] => {
       isCurrentMonth: false,
       isToday: false,
       isSelected: isSameDay(date, props.selectedDate),
-      isFuture: false
+      isFuture: date > today
     });
   }
   

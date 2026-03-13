@@ -57,19 +57,26 @@
 ```
 src/
 ├── components/              # Vue 组件
+│   ├── common/              # 公共组件（v1.1.2+）
+│   │   ├── BaseButton.vue   # 基础按钮组件
+│   │   ├── BaseOverlay.vue  # 基础遮罩层组件
+│   │   └── PriorityBadge.vue # 优先级标签组件
 │   ├── AIDialog.vue        # AI 解析对话框
 │   ├── Calendar.vue        # 日历组件
 │   ├── ConfirmDialog.vue   # 确认对话框
-│   ├── FilterTabs.vue      # 筛选标签组件（可复用）
-│   ├── Icon.vue            # 图标组件（可复用）
-│   ├── Loading.vue         # 加载组件（可复用）
-│   ├── Modal.vue           # 模态框组件（可复用）
+│   ├── FilterTabs.vue      # 筛选标签组件
+│   ├── Icon.vue            # 图标组件
+│   ├── Loading.vue         # 加载组件
 │   ├── OperationLogViewer.vue # 操作日志查看器
-│   ├── PrioritySelector.vue # 优先级选择器（可复用）
+│   ├── PrioritySelector.vue # 优先级选择器
 │   ├── SettingsPanel.vue   # 设置面板
-│   ├── TaskInput.vue       # 任务输入组件（可复用）
+│   ├── TaskInput.vue       # 任务输入组件
 │   ├── Toast.vue           # 消息提示组件
 │   └── TodoItem.vue        # 待办事项组件
+├── composables/            # 组合式函数（v1.1.2+）
+│   ├── index.ts            # 导出入口
+│   ├── useSettings.ts      # 设置管理
+│   └── useTheme.ts         # 主题管理
 ├── constants/              # 常量定义
 │   └── model.ts            # AI 模型相关常量、优先级配置
 ├── services/               # 服务层
@@ -157,14 +164,11 @@ Tauri 后端 API 封装，提供类型安全的接口调用。
 ```typescript
 // 待办事项 API
 getTodos(): Promise<Todo[]>
-addTodoWithDate(content, sortOrder, createdAt): Promise<Todo>
+addTodoWithDate(content, sortOrder, createdAt, priority?): Promise<Todo>
 toggleTodo(id, completed): Promise<void>
 deleteTodo(id): Promise<void>
 updateTodoContent(id, content): Promise<void>
 updateTodoOrder(id, sortOrder): Promise<void>
-
-// 日志 API
-getLogs(): Promise<LogEntry[]>
 ```
 
 #### openaiApi.ts
@@ -303,22 +307,21 @@ API_CONFIG = {
 
 支持的图标：calendar, ai, settings, close, plus, delete, edit, chevron-left, chevron-right, chevron-down, check, eye, folder, loading, checkbox, checkbox-checked
 
-#### Modal 组件
+#### BaseOverlay 组件
 
-基础模态框组件，提供统一的弹窗体验。
+基础遮罩层组件，提供统一的弹窗背景。
 
 ```vue
-<Modal v-model:visible="showModal" title="标题" @close="handleClose">
-  <template #default>内容</template>
-  <template #footer>底部</template>
-</Modal>
+<BaseOverlay :visible="showModal" @close="handleClose">
+  <div class="modal-content">内容</div>
+</BaseOverlay>
 ```
 
 特性：
-- ESC 键关闭
-- 点击遮罩关闭（可配置）
-- 自动滚动锁定
+- Teleport 到 body
+- 点击遮罩关闭
 - 过渡动画
+- 统一样式
 
 #### Loading 组件
 
@@ -518,8 +521,9 @@ export function useLoading() {
 每个组件只负责一个功能点。
 
 - `Icon.vue` - 只负责图标渲染
-- `Modal.vue` - 只负责模态框结构
+- `BaseOverlay.vue` - 只负责遮罩层结构
 - `Loading.vue` - 只负责加载状态展示
+- `PriorityBadge.vue` - 只负责优先级标签展示
 
 ### 4. 类型安全
 
@@ -545,11 +549,6 @@ export interface PriorityOption {
   value: PriorityType;
   label: string;
   color: string;
-}
-
-export interface FilterTab {
-  value: FilterType;
-  label: string;
 }
 ```
 

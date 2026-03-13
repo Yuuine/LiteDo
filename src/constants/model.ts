@@ -3,6 +3,40 @@ export const STORAGE_KEYS = {
   APP_SETTINGS: 'app_settings',
 } as const;
 
+export const FONT_THEME_CONFIG: Record<string, { label: string; family: string; webFont?: string }> = {
+  system: { 
+    label: '系统默认', 
+    family: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" 
+  },
+  sf: { 
+    label: 'SF Pro', 
+    family: "'SF Pro Display', 'SF Pro Text', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif",
+    webFont: 'https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@400;500;600&display=swap'
+  },
+  roboto: { 
+    label: 'Roboto', 
+    family: "'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif",
+    webFont: 'https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600&display=swap'
+  },
+  noto: { 
+    label: '思源黑体', 
+    family: "'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    webFont: 'https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&display=swap'
+  },
+  serif: { 
+    label: '衬线体', 
+    family: "'Noto Serif SC', Georgia, 'Times New Roman', serif",
+    webFont: 'https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600&display=swap'
+  },
+  mono: { 
+    label: '等宽字体', 
+    family: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
+    webFont: 'https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap'
+  },
+};
+
+export const DEFAULT_FONT_THEME = 'system';
+
 export const PRIORITY_CONFIG: Record<string, { label: string; color: string }> = {
   high: { label: '高', color: 'var(--danger-color)' },
   medium: { label: '中', color: 'var(--warning-color)' },

@@ -26,5 +26,3 @@ export interface ConnectionTestResult {
   success: boolean;
   error?: string;
 }
-
-export type Priority = ParsedTodo['priority'];

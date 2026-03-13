@@ -11,15 +11,9 @@ export interface Todo {
 export type PriorityType = 'low' | 'medium' | 'high';
 
 export type FilterType = 'all' | 'active' | 'completed';
-export type TimeFilterType = 'day' | 'week' | 'month' | 'year' | 'all';
 
 export interface PriorityOption {
   value: PriorityType;
   label: string;
   color: string;
-}
-
-export interface FilterTab {
-  value: FilterType;
-  label: string;
 }

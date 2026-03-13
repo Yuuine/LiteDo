@@ -14,7 +14,6 @@ import logger, { system } from './utils/logger';
 import { formatDate } from './utils/dateUtils';
 import { showToast } from './utils/toast';
 import type { PriorityType } from './types/todo';
-import { getDefaultPriority } from './utils/priority';
 
 const store = useTodoStore();
 
@@ -22,9 +21,6 @@ const showCalendar = ref(false);
 const showSettings = ref(false);
 const showAIDialog = ref(false);
 const isSubmitting = ref(false);
-
-const taskInputRef = ref<InstanceType<typeof TaskInput> | null>(null);
-const selectedPriority = ref<PriorityType>(getDefaultPriority());
 
 function closeAllModals(): void {
   showCalendar.value = false;
@@ -50,7 +46,6 @@ async function handleAddTask(content: string, priority: PriorityType): Promise<v
     await store.addTodoWithDate(content, createdTimestamp, priority);
     await logger.info('App', 'Task added successfully', { content, timestamp: createdTimestamp });
     showToast('任务添加成功');
-    selectedPriority.value = getDefaultPriority();
   } catch (e) {
     await logger.error('App', 'Failed to add todo', { error: e, content });
     showToast('添加失败，请重试', 'error');
@@ -210,7 +205,7 @@ onUnmounted(() => {
 }
 
 .date-text {
-  font-size: 15px;
+  font-size: 0.9375rem;
   font-weight: 600;
 }
 
@@ -304,7 +299,7 @@ onUnmounted(() => {
 
 .empty-text {
   color: var(--text-muted);
-  font-size: 15px;
+  font-size: 0.9375rem;
   margin: 0 0 8px;
 }
 

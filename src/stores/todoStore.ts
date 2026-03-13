@@ -1,19 +1,27 @@
 import { defineStore } from 'pinia';
 import { ref, computed, shallowRef } from 'vue';
 import type { Todo, FilterType, PriorityType } from '../types/todo';
-import { STORAGE_KEYS, PRIORITY_ORDER } from '../constants/model';
+import { STORAGE_KEYS, PRIORITY_ORDER, DEFAULT_FONT_THEME } from '../constants/model';
 import * as api from '../services/api';
 import logger, { operation } from '../utils/logger';
 import { getDateRange } from '../utils/dateUtils';
 
+export type FontThemeKey = 'system' | 'sf' | 'roboto' | 'noto' | 'serif' | 'mono';
+
 interface AppSettings {
+  autoStart: boolean;
+  themeColor: string;
   priorityEnabled: boolean;
   sortByPriority: boolean;
+  fontTheme: FontThemeKey;
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
+  autoStart: false,
+  themeColor: '#6366f1',
   priorityEnabled: false,
   sortByPriority: false,
+  fontTheme: DEFAULT_FONT_THEME as FontThemeKey,
 };
 
 function loadAppSettings(): AppSettings {
@@ -30,7 +38,10 @@ function loadAppSettings(): AppSettings {
 
 function saveAppSettings(settings: AppSettings): void {
   try {
-    localStorage.setItem(STORAGE_KEYS.APP_SETTINGS, JSON.stringify(settings));
+    const existing = localStorage.getItem(STORAGE_KEYS.APP_SETTINGS);
+    const existingSettings = existing ? JSON.parse(existing) : {};
+    const merged = { ...existingSettings, ...settings };
+    localStorage.setItem(STORAGE_KEYS.APP_SETTINGS, JSON.stringify(merged));
   } catch (e) {
     console.error('Failed to save settings:', e);
   }
@@ -76,27 +87,16 @@ export const useTodoStore = defineStore('todo', () => {
   });
 
   function sortTodos(todoList: Todo[]): Todo[] {
-    const sorted = [...todoList];
-    
-    if (sortByPriority.value && priorityEnabled.value) {
-      sorted.sort((a, b) => {
-        if (a.completed !== b.completed) {
-          return a.completed ? 1 : -1;
-        }
+    return [...todoList].sort((a, b) => {
+      if (a.completed !== b.completed) {
+        return a.completed ? 1 : -1;
+      }
+      if (sortByPriority.value && priorityEnabled.value) {
         const priorityDiff = PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority];
         if (priorityDiff !== 0) return priorityDiff;
-        return a.sort_order - b.sort_order;
-      });
-    } else {
-      sorted.sort((a, b) => {
-        if (a.completed !== b.completed) {
-          return a.completed ? 1 : -1;
-        }
-        return a.sort_order - b.sort_order;
-      });
-    }
-    
-    return sorted;
+      }
+      return a.sort_order - b.sort_order;
+    });
   }
 
   const filteredTodos = computed(() => {
