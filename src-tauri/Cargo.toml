@@ -1,8 +1,8 @@
 [package]
 name = "litedo"
-version = "0.1.0"
-description = "A lightweight todo app"
-authors = ["you"]
+version = "1.0.0"
+description = "A lightweight todo application built with Tauri"
+authors = ["LiteDo Team"]
 edition = "2021"
 
 [build-dependencies]

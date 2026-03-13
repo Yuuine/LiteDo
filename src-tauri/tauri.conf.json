@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "LiteDo",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "identifier": "com.litedo.desktop",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "LiteDo",
+        "title": "LiteDo - 轻量级待办事项",
         "width": 420,
         "height": 600,
         "minWidth": 320,

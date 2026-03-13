@@ -1,13 +1,15 @@
 {
-  "name": "tauri-app",
+  "name": "litedo",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "clean": "node scripts/clean-before-release.js",
+    "prebuild": "npm run clean"
   },
   "dependencies": {
     "@tauri-apps/api": "^2",
