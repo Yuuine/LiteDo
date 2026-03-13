@@ -11,7 +11,7 @@ import type {
 import { encryptApiKey, decryptApiKey } from '../utils/crypto';
 import { chatCompletion } from '../services/openaiApi';
 import { STORAGE_KEYS, AI_PROMPTS, API_CONFIG, PRIORITY_LEVELS } from '../constants/model';
-import logger from '../utils/logger';
+import logger, { operation } from '../utils/logger';
 
 const LOG_TAG = 'ModelStore';
 
@@ -192,10 +192,19 @@ export const useModelStore = defineStore('model', () => {
         max_tokens: API_CONFIG.TEST_MAX_TOKENS,
       });
 
+      if (result.success) {
+        await operation('模型管理', '连接测试', `测试连接成功: ${modelName}`, '成功');
+      } else {
+        await operation('模型管理', '连接测试', `测试连接失败: ${result.error}`, '失败');
+      }
+
       return {
         success: result.success,
         error: result.error,
       };
+    } catch (e) {
+      await operation('模型管理', '连接测试', `测试连接异常: ${e}`, '失败');
+      return { success: false, error: String(e) };
     } finally {
       isTesting.value = false;
     }
@@ -273,8 +282,10 @@ export const useModelStore = defineStore('model', () => {
         id,
         name: model.name,
       });
+      operation('模型管理', '模型选择', `选择模型: ${model.name}`, '成功');
     } else {
       logger.error(LOG_TAG, '切换模型失败：模型不存在', { id });
+      operation('模型管理', '模型选择', `选择模型失败: 模型不存在`, '失败');
     }
   }
 

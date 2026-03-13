@@ -12,6 +12,10 @@ const props = defineProps<{
 const store = useTodoStore();
 const showConfirm = ref(false);
 
+function showToast(message: string, type: 'success' | 'error' | 'info' = 'success') {
+  window.dispatchEvent(new CustomEvent('toast', { detail: { message, type } }));
+}
+
 function handleDelete() {
   showConfirm.value = true;
 }
@@ -19,6 +23,7 @@ function handleDelete() {
 function confirmDelete() {
   store.deleteTodo(props.todo.id);
   showConfirm.value = false;
+  showToast('删除成功', 'success');
 }
 </script>
 
@@ -76,7 +81,7 @@ function confirmDelete() {
 
 .todo-item:hover {
   border-color: var(--accent-color);
-  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.1);
+  box-shadow: 0 2px 8px var(--accent-color-alpha);
 }
 
 .todo-item.completed .todo-text {
