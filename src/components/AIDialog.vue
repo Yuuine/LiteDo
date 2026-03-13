@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useModelStore } from '../stores/modelStore';
 import { useTodoStore } from '../stores/todoStore';
 import type { ParsedTodo } from '../types/model';
@@ -20,6 +20,21 @@ const isParsing = ref(false);
 const parseResult = ref<ParsedTodo[]>([]);
 const selectedTodos = ref<Set<number>>(new Set());
 const showResult = ref(false);
+const showGuide = ref(false);
+
+const GUIDE_SHOWN_KEY = 'ai_guide_shown';
+
+onMounted(() => {
+  const guideShown = localStorage.getItem(GUIDE_SHOWN_KEY);
+  if (!guideShown) {
+    showGuide.value = true;
+  }
+});
+
+function dismissGuide() {
+  showGuide.value = false;
+  localStorage.setItem(GUIDE_SHOWN_KEY, 'true');
+}
 
 const canParse = computed(() => {
   return inputText.value.trim() && selectedModelId.value && !isParsing.value;
@@ -55,7 +70,11 @@ async function handleParse() {
   showResult.value = false;
   
   try {
-    const result = await modelStore.parseTodosWithAI(selectedModelId.value, inputText.value);
+    const result = await modelStore.parseTodosWithAI(
+      selectedModelId.value, 
+      inputText.value,
+      todoStore.priorityEnabled
+    );
     
     if (result.success && result.todos.length > 0) {
       parseResult.value = result.todos;
@@ -87,7 +106,7 @@ async function handleSubmit() {
   
   for (const todo of todosToAdd) {
     try {
-      await todoStore.addTodoWithDate(todo.content, createdTimestamp);
+      await todoStore.addTodoWithDate(todo.content, createdTimestamp, todo.priority);
       successCount++;
     } catch (e) {
       console.error('Failed to add todo:', e);
@@ -107,6 +126,18 @@ function handleBack() {
   parseResult.value = [];
   selectedTodos.value.clear();
 }
+
+const priorityLabels: Record<string, string> = {
+  high: '高优先',
+  medium: '中优先',
+  low: '低优先'
+};
+
+const exampleTexts = [
+  '明天下午3点开会，晚上健身',
+  '给客户发邮件并更新项目计划',
+  '准备周一的演示文稿，整理上周的销售数据',
+];
 </script>
 
 <template>
@@ -127,6 +158,31 @@ function handleBack() {
         
         <div class="dialog-content">
           <div v-if="!showResult" class="input-section">
+            <div v-if="showGuide" class="guide-card">
+              <div class="guide-header">
+                <Icon name="ai" :size="20" color="var(--accent-color)" />
+                <span class="guide-title">AI智能解析</span>
+              </div>
+              <p class="guide-text">
+                输入自然语言描述，AI会自动将其解析为结构化的待办事项列表。
+              </p>
+              <div class="guide-examples">
+                <span class="example-label">示例：</span>
+                <button 
+                  v-for="(example, index) in exampleTexts" 
+                  :key="index"
+                  class="example-btn"
+                  @click="inputText = example"
+                  type="button"
+                >
+                  {{ example }}
+                </button>
+              </div>
+              <button class="guide-dismiss" @click="dismissGuide" type="button">
+                知道了
+              </button>
+            </div>
+            
             <div class="form-group">
               <label class="form-label">选择模型</label>
               <select v-model="selectedModelId" class="model-select" :disabled="modelStore.models.length === 0">
@@ -142,7 +198,7 @@ function handleBack() {
               <textarea 
                 v-model="inputText" 
                 class="task-textarea" 
-                placeholder="描述你想要完成的任务"
+                placeholder="描述你想要完成的任务，例如：明天下午3点开会，晚上健身"
                 rows="6"
               ></textarea>
               <span class="char-count">{{ inputText.length }} 字</span>
@@ -172,8 +228,12 @@ function handleBack() {
                 </div>
                 <div class="todo-content">
                   <span class="todo-text">{{ todo.content }}</span>
-                  <span class="todo-priority" :class="todo.priority">
-                    {{ todo.priority === 'high' ? '高优先' : todo.priority === 'medium' ? '中优先' : '低优先' }}
+                  <span 
+                    v-if="todoStore.priorityEnabled" 
+                    class="todo-priority" 
+                    :class="todo.priority"
+                  >
+                    {{ priorityLabels[todo.priority] }}
                   </span>
                 </div>
               </div>
@@ -307,6 +367,80 @@ function handleBack() {
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+.guide-card {
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid var(--border-color);
+}
+
+.guide-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.guide-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.guide-text {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 0 0 12px;
+  line-height: 1.5;
+}
+
+.guide-examples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.example-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  width: 100%;
+  margin-bottom: 4px;
+}
+
+.example-btn {
+  font-size: 12px;
+  padding: 4px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.example-btn:hover {
+  border-color: var(--accent-color);
+  color: var(--accent-color);
+}
+
+.guide-dismiss {
+  width: 100%;
+  padding: 8px;
+  border: none;
+  border-radius: 8px;
+  background: var(--accent-color);
+  color: white;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.guide-dismiss:hover {
+  opacity: 0.9;
 }
 
 .form-group {

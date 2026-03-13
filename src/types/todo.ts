@@ -8,5 +8,7 @@ export interface Todo {
   sort_order: number;
 }
 
+export type PriorityType = 'low' | 'medium' | 'high';
+
 export type FilterType = 'all' | 'active' | 'completed';
 export type TimeFilterType = 'day' | 'week' | 'month' | 'year' | 'all';

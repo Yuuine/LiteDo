@@ -11,6 +11,7 @@ import Icon from './components/Icon.vue';
 import logger, { system } from './utils/logger';
 import { formatDate } from './utils/dateUtils';
 import { showToast } from './utils/toast';
+import type { PriorityType } from './types/todo';
 
 const store = useTodoStore();
 const showCalendar = ref(false);
@@ -18,6 +19,13 @@ const showSettings = ref(false);
 const showAIDialog = ref(false);
 const newTaskContent = ref('');
 const isSubmitting = ref(false);
+const selectedPriority = ref<PriorityType>('medium');
+
+const priorityOptions: { value: PriorityType; label: string }[] = [
+  { value: 'high', label: '高' },
+  { value: 'medium', label: '中' },
+  { value: 'low', label: '低' },
+];
 
 function handleKeydown(e: KeyboardEvent) {
   if (e.key === 'Escape') {
@@ -36,21 +44,16 @@ async function handleAddTask() {
     return;
   }
   
-  if (text.length > store.maxTodoLength) {
-    await logger.warn('App', 'Task content exceeds max length', { textLength: text.length, maxAllowed: store.maxTodoLength });
-    showToast(`待办事项字数超过限制（最多${store.maxTodoLength}字）`, 'error');
-    return;
-  }
-  
   isSubmitting.value = true;
   const createdTimestamp = Math.floor(store.selectedDate.getTime() / 1000);
   await logger.debug('App', 'Adding task', { text, createdTimestamp, selectedDate: store.selectedDate.toISOString() });
   
   try {
-    await store.addTodoWithDate(text, createdTimestamp);
+    await store.addTodoWithDate(text, createdTimestamp, selectedPriority.value);
     await logger.info('App', 'Task added successfully', { text, timestamp: createdTimestamp });
     showToast('任务添加成功');
     newTaskContent.value = '';
+    selectedPriority.value = 'medium';
   } catch (e) {
     await logger.error('App', 'Failed to add todo', { error: e, text });
     showToast('添加失败，请重试', 'error');
@@ -120,13 +123,21 @@ onUnmounted(() => {
             <input
               v-model="newTaskContent"
               type="text"
-              :placeholder="`添加新任务（最多${store.maxTodoLength}字）`"
+              placeholder="添加新任务"
               class="task-input"
-              :maxlength="store.maxTodoLength"
             />
-            <span class="char-count" v-if="newTaskContent.length > 0">
-              {{ newTaskContent.length }}/{{ store.maxTodoLength }}
-            </span>
+          </div>
+          <div v-if="store.priorityEnabled" class="priority-selector">
+            <button
+              v-for="option in priorityOptions"
+              :key="option.value"
+              type="button"
+              class="priority-btn"
+              :class="[option.value, { active: selectedPriority === option.value }]"
+              @click.stop="selectedPriority = option.value"
+            >
+              {{ option.label }}
+            </button>
           </div>
           <button 
             type="submit" 
@@ -343,14 +354,48 @@ onUnmounted(() => {
   color: var(--text-muted);
 }
 
-.char-count {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 12px;
+.priority-selector {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.priority-btn {
+  width: 32px;
+  height: 32px;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-primary);
   color: var(--text-muted);
-  pointer-events: none;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.priority-btn:hover {
+  border-color: var(--text-muted);
+}
+
+.priority-btn.high.active {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: var(--danger-color);
+  color: var(--danger-color);
+}
+
+.priority-btn.medium.active {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: var(--warning-color);
+  color: var(--warning-color);
+}
+
+.priority-btn.low.active {
+  background: rgba(34, 197, 94, 0.15);
+  border-color: var(--success-color);
+  color: var(--success-color);
 }
 
 .btn-add {

@@ -1,10 +1,8 @@
 import { defineStore } from 'pinia';
 import { ref, computed, shallowRef } from 'vue';
-import type { Todo, FilterType } from '../types/todo';
+import type { Todo, FilterType, PriorityType } from '../types/todo';
 import * as api from '../services/api';
 import logger, { operation } from '../utils/logger';
-
-
 
 function getStartOfDay(date: Date): number {
   const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -16,7 +14,8 @@ export const useTodoStore = defineStore('todo', () => {
   const filter = ref<FilterType>('all');
   const selectedDate = ref(new Date());
   const isLoading = ref(false);
-  const maxTodoLength = ref(30);
+  const priorityEnabled = ref(false);
+  const sortByPriority = ref(false);
 
   const todoMap = computed(() => {
     const map = new Map<string, Todo>();
@@ -31,7 +30,8 @@ export const useTodoStore = defineStore('todo', () => {
       const savedSettings = localStorage.getItem('app_settings');
       if (savedSettings) {
         const settings = JSON.parse(savedSettings);
-        maxTodoLength.value = settings.maxTodoLength || 30;
+        priorityEnabled.value = settings.priorityEnabled ?? false;
+        sortByPriority.value = settings.sortByPriority ?? false;
       }
     } catch (e) {
       console.error('Failed to load settings:', e);
@@ -56,20 +56,35 @@ export const useTodoStore = defineStore('todo', () => {
   const filteredTodos = computed(() => {
     const dayTodos = selectedDateTodos.value;
     
+    let filtered: Todo[];
     if (filter.value === 'active') {
-      return dayTodos.filter(t => !t.completed).sort((a, b) => a.sort_order - b.sort_order);
+      filtered = dayTodos.filter(t => !t.completed);
+    } else if (filter.value === 'completed') {
+      filtered = dayTodos.filter(t => t.completed);
+    } else {
+      filtered = [...dayTodos];
     }
     
-    if (filter.value === 'completed') {
-      return dayTodos.filter(t => t.completed).sort((a, b) => a.sort_order - b.sort_order);
+    if (sortByPriority.value && priorityEnabled.value) {
+      const priorityOrder = { high: 0, medium: 1, low: 2 };
+      filtered.sort((a, b) => {
+        if (a.completed !== b.completed) {
+          return a.completed ? 1 : -1;
+        }
+        const priorityDiff = priorityOrder[a.priority] - priorityOrder[b.priority];
+        if (priorityDiff !== 0) return priorityDiff;
+        return a.sort_order - b.sort_order;
+      });
+    } else {
+      filtered.sort((a, b) => {
+        if (a.completed !== b.completed) {
+          return a.completed ? 1 : -1;
+        }
+        return a.sort_order - b.sort_order;
+      });
     }
     
-    return [...dayTodos].sort((a, b) => {
-      if (a.completed !== b.completed) {
-        return a.completed ? 1 : -1;
-      }
-      return a.sort_order - b.sort_order;
-    });
+    return filtered;
   });
 
   const stats = computed(() => {
@@ -116,20 +131,12 @@ export const useTodoStore = defineStore('todo', () => {
     }
   }
 
-  async function addTodoWithDate(content: string, createdAt: number) {
+  async function addTodoWithDate(content: string, createdAt: number, priority: PriorityType = 'medium') {
     await logger.debug('Store', 'addTodoWithDate called', { 
       content, 
       createdAt,
-      contentLength: content.length,
-      maxAllowed: maxTodoLength.value 
+      priority,
     });
-    
-    if (content.length > maxTodoLength.value) {
-      const error = `待办事项字数超过限制（最多${maxTodoLength.value}字）`;
-      await logger.warn('Store', 'Task content exceeds limit', { contentLength: content.length, maxAllowed: maxTodoLength.value });
-      await operation('任务管理', '任务', `添加任务失败: 字数超限`, '失败');
-      throw new Error(error);
-    }
     
     try {
       let maxOrder = 0;
@@ -139,13 +146,14 @@ export const useTodoStore = defineStore('todo', () => {
       const sortOrder = maxOrder + 1;
       await logger.debug('Store', 'Creating todo with sort order', { sortOrder, totalTodos: todos.value.length });
       
-      const todo = await api.addTodoWithDate(content, sortOrder, createdAt);
+      const todo = await api.addTodoWithDate(content, sortOrder, createdAt, priority);
       todos.value = [todo, ...todos.value];
       
       await operation('任务管理', '任务', `添加任务: ${content}`, '成功');
       await logger.info('Store', 'Todo added successfully', { 
         id: todo.id, 
         content,
+        priority,
         sortOrder,
         createdAt,
         totalTodos: todos.value.length
@@ -262,6 +270,38 @@ export const useTodoStore = defineStore('todo', () => {
     }
   }
 
+  async function updateTodoContent(id: string, newContent: string) {
+    const todo = todoMap.value.get(id);
+    if (!todo) {
+      await logger.warn('Store', 'Todo not found for update', { id });
+      return;
+    }
+    
+    await logger.debug('Store', 'updateTodoContent called', { 
+      id, 
+      oldContent: todo.content,
+      newContent,
+    });
+    
+    try {
+      await api.updateTodoContent(id, newContent);
+      todos.value = todos.value.map(t => 
+        t.id === id ? { ...t, content: newContent } : t
+      );
+      
+      await operation('任务管理', '任务', `编辑任务: ${newContent}`, '成功');
+      await logger.info('Store', 'Todo content updated successfully', { 
+        id, 
+        oldContent: todo.content,
+        newContent,
+      });
+    } catch (e) {
+      await operation('任务管理', '任务', `编辑任务失败`, '失败');
+      await logger.error('Store', 'Failed to update todo content', { error: e, id });
+      throw e;
+    }
+  }
+
   function setFilter(newFilter: FilterType) {
     filter.value = newFilter;
   }
@@ -275,7 +315,8 @@ export const useTodoStore = defineStore('todo', () => {
     filter,
     selectedDate,
     isLoading,
-    maxTodoLength,
+    priorityEnabled,
+    sortByPriority,
     filteredTodos,
     stats,
     selectedDateStats,
@@ -283,6 +324,7 @@ export const useTodoStore = defineStore('todo', () => {
     addTodoWithDate,
     toggleTodo,
     deleteTodo,
+    updateTodoContent,
     setFilter,
     setSelectedDate,
   };

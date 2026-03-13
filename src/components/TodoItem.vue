@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, nextTick } from 'vue';
 import type { Todo } from '../types/todo';
 import { useTodoStore } from '../stores/todoStore';
 import ConfirmDialog from './ConfirmDialog.vue';
@@ -13,6 +13,9 @@ const props = defineProps<{
 
 const store = useTodoStore();
 const showConfirm = ref(false);
+const isEditing = ref(false);
+const editContent = ref('');
+const editInput = ref<HTMLInputElement | null>(null);
 
 function handleDelete() {
   showConfirm.value = true;
@@ -23,13 +26,65 @@ function confirmDelete() {
   showConfirm.value = false;
   showToast('删除成功', 'success');
 }
+
+function startEdit() {
+  editContent.value = props.todo.content;
+  isEditing.value = true;
+  nextTick(() => {
+    editInput.value?.focus();
+    editInput.value?.select();
+  });
+}
+
+function cancelEdit() {
+  isEditing.value = false;
+  editContent.value = '';
+}
+
+async function handleBlur() {
+  const trimmedContent = editContent.value.trim();
+  
+  if (!trimmedContent) {
+    showToast('任务内容不能为空', 'error');
+    editContent.value = props.todo.content;
+    isEditing.value = false;
+    return;
+  }
+  
+  if (trimmedContent === props.todo.content) {
+    isEditing.value = false;
+    return;
+  }
+  
+  try {
+    await store.updateTodoContent(props.todo.id, trimmedContent);
+    showToast('修改成功', 'success');
+    isEditing.value = false;
+  } catch (e) {
+    showToast('修改失败', 'error');
+    editContent.value = props.todo.content;
+    isEditing.value = false;
+  }
+}
+
+function handleEditKeydown(e: KeyboardEvent) {
+  if (e.key === 'Escape') {
+    cancelEdit();
+  }
+}
+
+const priorityLabels: Record<string, string> = {
+  high: '高',
+  medium: '中',
+  low: '低'
+};
 </script>
 
 <template>
   <div 
     class="todo-item" 
     :class="{ completed: todo.completed }"
-    @click="store.toggleTodo(todo.id)"
+    @click="!isEditing && store.toggleTodo(todo.id)"
     >
     <label class="checkbox-wrapper" @click.stop>
       <input
@@ -42,13 +97,40 @@ function confirmDelete() {
     </label>
     
     <div class="todo-content">
-      <span class="todo-text">{{ todo.content }}</span>
-      <span class="time">{{ formatTime(todo.created_at) }}</span>
+      <template v-if="isEditing">
+        <input
+          ref="editInput"
+          v-model="editContent"
+          type="text"
+          class="edit-input"
+          @keydown="handleEditKeydown"
+          @blur="handleBlur"
+          @click.stop
+        />
+      </template>
+      <template v-else>
+        <span class="todo-text">{{ todo.content }}</span>
+        <div class="todo-meta">
+          <span class="time">{{ formatTime(todo.created_at) }}</span>
+          <span 
+            v-if="store.priorityEnabled" 
+            class="priority-badge" 
+            :class="todo.priority"
+          >
+            {{ priorityLabels[todo.priority] }}
+          </span>
+        </div>
+      </template>
     </div>
     
-    <button class="delete-btn" @click.stop="handleDelete" title="删除">
-      <Icon name="close" :size="14" />
-    </button>
+    <div v-if="!isEditing" class="action-buttons">
+      <button class="edit-btn" @click.stop="startEdit" title="编辑" type="button">
+        <Icon name="edit" :size="14" />
+      </button>
+      <button class="delete-btn" @click.stop="handleDelete" title="删除" type="button">
+        <Icon name="close" :size="14" />
+      </button>
+    </div>
     
     <ConfirmDialog
       v-if="showConfirm"
@@ -139,6 +221,9 @@ function confirmDelete() {
   flex: 1;
   min-width: 0;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .todo-text {
@@ -149,11 +234,80 @@ function confirmDelete() {
   line-height: 1.4;
 }
 
+.todo-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .time {
-  display: block;
   font-size: 11px;
   color: var(--text-muted);
-  margin-top: 4px;
+}
+
+.priority-badge {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.priority-badge.high {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--danger-color);
+}
+
+.priority-badge.medium {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--warning-color);
+}
+
+.priority-badge.low {
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--success-color);
+}
+
+.edit-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 2px solid var(--accent-color);
+  border-radius: 8px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 14px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.edit-btn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.todo-item:hover .edit-btn {
+  opacity: 1;
+}
+
+.edit-btn:hover {
+  background: var(--accent-color);
+  color: white;
 }
 
 .delete-btn {

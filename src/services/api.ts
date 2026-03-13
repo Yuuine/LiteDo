@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import type { Todo } from '../types/todo';
+import type { Todo, PriorityType } from '../types/todo';
 import logger from '../utils/logger';
 
 export interface LogEntry {
@@ -37,8 +37,8 @@ export async function addTodo(content: string, sortOrder: number): Promise<Todo>
   }
 }
 
-export async function addTodoWithDate(content: string, sortOrder: number, createdAt: number): Promise<Todo> {
-  const params = { content, priority: 'medium', sortOrder, createdAt };
+export async function addTodoWithDate(content: string, sortOrder: number, createdAt: number, priority: PriorityType = 'medium'): Promise<Todo> {
+  const params = { content, priority, sortOrder, createdAt };
   logger.info('API', 'Adding todo with date', params);
   try {
     const result = await invoke<Todo>('add_todo_with_date', params);

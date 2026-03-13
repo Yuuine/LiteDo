@@ -231,7 +231,7 @@ export const useModelStore = defineStore('model', () => {
     }
   }
 
-  async function parseTodosWithAI(modelId: string, text: string): Promise<AIParseResult> {
+  async function parseTodosWithAI(modelId: string, text: string, priorityEnabled: boolean = true): Promise<AIParseResult> {
     const model = models.value.find((m) => m.id === modelId);
     if (!model) {
       await logger.error(LOG_TAG, 'AI解析失败：模型不存在', { modelId });
@@ -242,14 +242,19 @@ export const useModelStore = defineStore('model', () => {
       modelId,
       modelName: model.modelName,
       inputLength: text.length,
+      priorityEnabled,
     });
 
     const apiKey = await getDecryptedApiKey(modelId);
+    
+    const systemPrompt = priorityEnabled 
+      ? AI_PROMPTS.TODO_PARSER 
+      : AI_PROMPTS.TODO_PARSER_NO_PRIORITY;
 
     const result = await chatCompletion(model.apiUrl, apiKey, {
       model: model.modelName,
       messages: [
-        { role: 'system', content: AI_PROMPTS.TODO_PARSER },
+        { role: 'system', content: systemPrompt },
         { role: 'user', content: text },
       ],
       temperature: API_CONFIG.DEFAULT_TEMPERATURE,
@@ -278,7 +283,7 @@ export const useModelStore = defineStore('model', () => {
       const todos: ParsedTodo[] = (parsed.todos || [])
         .map((t: ParsedTodo) => ({
           content: t.content?.trim() || '',
-          priority: PRIORITY_LEVELS.includes(t.priority) ? t.priority : 'medium',
+          priority: priorityEnabled && PRIORITY_LEVELS.includes(t.priority) ? t.priority : 'medium',
         }))
         .filter((t: ParsedTodo) => t.content);
 

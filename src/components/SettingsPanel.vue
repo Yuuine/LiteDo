@@ -20,8 +20,9 @@ const activeTab = ref<'general' | 'model'>('general');
 
 const settings = ref({
   autoStart: false,
-  maxTodoLength: 30,
   themeColor: '#6366f1',
+  priorityEnabled: false,
+  sortByPriority: false,
 });
 
 let originalThemeColor = '#6366f1';
@@ -91,23 +92,28 @@ async function handleSave() {
   try {
     const oldSettingsStr = localStorage.getItem('app_settings');
     const oldSettings = oldSettingsStr ? JSON.parse(oldSettingsStr) : {};
-    const oldMaxTodoLength = oldSettings.maxTodoLength || 30;
     const oldAutoStart = oldSettings.autoStart || false;
     const oldThemeColor = oldSettings.themeColor || '#6366f1';
+    const oldPriorityEnabled = oldSettings.priorityEnabled || false;
+    const oldSortByPriority = oldSettings.sortByPriority || false;
     
     localStorage.setItem('app_settings', JSON.stringify(settings.value));
-    store.maxTodoLength = settings.value.maxTodoLength;
+    store.priorityEnabled = settings.value.priorityEnabled;
+    store.sortByPriority = settings.value.sortByPriority;
     originalThemeColor = settings.value.themeColor;
     
     const changes: string[] = [];
     if (settings.value.autoStart !== oldAutoStart) {
       changes.push(`开机自启动: ${settings.value.autoStart ? '开启' : '关闭'}`);
     }
-    if (settings.value.maxTodoLength !== oldMaxTodoLength) {
-      changes.push(`字数限制: ${oldMaxTodoLength}字 → ${settings.value.maxTodoLength}字`);
-    }
     if (settings.value.themeColor !== oldThemeColor) {
       changes.push(`主题颜色: ${oldThemeColor} → ${settings.value.themeColor}`);
+    }
+    if (settings.value.priorityEnabled !== oldPriorityEnabled) {
+      changes.push(`优先级功能: ${settings.value.priorityEnabled ? '开启' : '关闭'}`);
+    }
+    if (settings.value.sortByPriority !== oldSortByPriority) {
+      changes.push(`按优先级排序: ${settings.value.sortByPriority ? '开启' : '关闭'}`);
     }
     
     if (changes.length > 0) {
@@ -201,20 +207,25 @@ async function handleTestConnection() {
       apiKey,
       modelForm.value.modelName
     );
-    
-    if (testResult.value.success) {
-      showToast('连接测试成功', 'success');
-    } else {
-      showToast(testResult.value.error || '连接测试失败', 'error');
-    }
   } catch (e) {
-    showToast('测试连接时发生错误: ' + (e instanceof Error ? e.message : '未知错误'), 'error');
+    testResult.value = { success: false, error: '测试连接时发生错误: ' + (e instanceof Error ? e.message : '未知错误') };
   }
 }
 
 async function handleSaveModel() {
   if (!isFormValid.value) {
     showToast('请填写完整信息', 'error');
+    return;
+  }
+  
+  const isDuplicate = modelStore.models.some(m => 
+    m.apiUrl === modelForm.value.apiUrl && 
+    m.modelName === modelForm.value.modelName &&
+    m.id !== editingModel.value?.id
+  );
+  
+  if (isDuplicate) {
+    showToast('重复的模型', 'error');
     return;
   }
   
@@ -316,19 +327,6 @@ function handleSelectModel(id: string) {
                 </label>
               </div>
               
-              <div class="setting-item">
-                <div class="setting-info">
-                  <span class="setting-label">待办事项字数限制</span>
-                </div>
-                <input 
-                  type="number" 
-                  v-model.number="settings.maxTodoLength" 
-                  min="10" 
-                  max="200"
-                  class="number-input"
-                />
-              </div>
-              
               <div class="setting-item theme-color-setting">
                 <div class="setting-info">
                   <span class="setting-label">主题颜色</span>
@@ -360,6 +358,32 @@ function handleSelectModel(id: string) {
             </section>
             
             <section class="section">
+              <h3 class="section-title">优先级功能</h3>
+              
+              <div class="setting-item">
+                <div class="setting-info">
+                  <span class="setting-label">启用优先级功能</span>
+                  <span class="setting-desc">开启后可设置任务优先级，AI解析也会识别优先级</span>
+                </div>
+                <label class="toggle">
+                  <input type="checkbox" v-model="settings.priorityEnabled" />
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              
+              <div v-if="settings.priorityEnabled" class="setting-item">
+                <div class="setting-info">
+                  <span class="setting-label">按优先级排序</span>
+                  <span class="setting-desc">任务列表按优先级从高到低排序</span>
+                </div>
+                <label class="toggle">
+                  <input type="checkbox" v-model="settings.sortByPriority" />
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            </section>
+            
+            <section class="section">
               <h3 class="section-title">日志管理</h3>
               
               <div class="setting-item">
@@ -381,7 +405,6 @@ function handleSelectModel(id: string) {
               <div class="setting-item">
                 <div class="setting-info">
                   <span class="setting-label">调试日志</span>
-                  <span class="setting-desc">记录系统运行详情</span>
                 </div>
                 <button class="btn-open-log" @click="openDebugLogLocation" type="button" title="在资源管理器中打开">
                   <Icon name="folder" :size="16" />
@@ -681,6 +704,11 @@ function handleSelectModel(id: string) {
   color: var(--text-primary);
 }
 
+.setting-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
 .toggle {
   position: relative;
   display: inline-block;
@@ -796,30 +824,6 @@ function handleSelectModel(id: string) {
 .btn-view-log:hover {
   background: var(--bg-secondary);
   transform: translateY(-1px);
-}
-
-.number-input {
-  width: 80px;
-  padding: 8px 12px;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  background: var(--bg-primary);
-  color: var(--text-primary);
-  font-size: 14px;
-  font-weight: 500;
-  text-align: center;
-  transition: all 0.2s;
-  flex-shrink: 0;
-}
-
-.number-input:hover {
-  border-color: var(--accent-color);
-}
-
-.number-input:focus {
-  outline: none;
-  border-color: var(--accent-color);
-  box-shadow: 0 0 0 3px var(--accent-color-alpha);
 }
 
 .theme-color-setting {
