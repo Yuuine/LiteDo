@@ -14,12 +14,6 @@ const showSettings = ref(false);
 const newTaskContent = ref('');
 const isSubmitting = ref(false);
 
-declare global {
-  interface WindowEventMap {
-    toast: CustomEvent<{ message: string; type: 'success' | 'error' | 'info' }>;
-  }
-}
-
 function showToast(message: string, type: 'success' | 'error' | 'info' = 'success') {
   window.dispatchEvent(new CustomEvent('toast', { detail: { message, type } }));
 }
@@ -449,11 +443,6 @@ onUnmounted(() => {
   justify-content: center;
   z-index: 1000;
   animation: fadeIn 0.15s ease;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
 }
 
 .calendar-modal {

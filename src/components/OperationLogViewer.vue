@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
-import { getOperationLogs, type OperationLog } from '../utils/operationLogger';
+import { getOperationLogs, type OperationLog } from '../utils/logger';
 
 const emit = defineEmits<{
   close: [];
@@ -118,11 +118,6 @@ function getResultClass(result: string): string {
   animation: fadeIn 0.15s ease;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
 .log-viewer-panel {
   background: var(--bg-primary);
   border-radius: 16px;
@@ -133,17 +128,6 @@ function getResultClass(result: string): string {
   flex-direction: column;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
   animation: slideUp 0.2s ease;
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 .log-viewer-header {

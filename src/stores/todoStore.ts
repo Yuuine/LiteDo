@@ -9,8 +9,6 @@ export const useTodoStore = defineStore('todo', () => {
   const filter = ref<FilterType>('all');
   const selectedDate = ref(new Date());
   const isLoading = ref(false);
-  const isDragging = ref(false);
-  const draggedId = ref<string | null>(null);
   const maxTodoLength = ref(30);
 
   function loadSettings() {
@@ -37,10 +35,13 @@ export const useTodoStore = defineStore('todo', () => {
     };
   });
 
-  const filteredTodos = computed(() => {
+  const selectedDateTodos = computed(() => {
     const { start, end } = selectedDateRange.value;
-    
-    let filtered = todos.value.filter(t => t.created_at >= start && t.created_at < end);
+    return todos.value.filter(t => t.created_at >= start && t.created_at < end);
+  });
+
+  const filteredTodos = computed(() => {
+    let filtered = selectedDateTodos.value;
     
     switch (filter.value) {
       case 'active':
@@ -61,8 +62,7 @@ export const useTodoStore = defineStore('todo', () => {
   }));
 
   const selectedDateStats = computed(() => {
-    const { start, end } = selectedDateRange.value;
-    const dayTodos = todos.value.filter(t => t.created_at >= start && t.created_at < end);
+    const dayTodos = selectedDateTodos.value;
     return {
       total: dayTodos.length,
       active: dayTodos.filter(t => !t.completed).length,
@@ -188,36 +188,6 @@ export const useTodoStore = defineStore('todo', () => {
     }
   }
 
-  async function reorderTodos(fromIndex: number, toIndex: number) {
-    const todoList = filteredTodos.value;
-    if (fromIndex === toIndex || fromIndex < 0 || toIndex < 0) return;
-    
-    const movedTodo = todoList[fromIndex];
-    if (!movedTodo) return;
-    
-    const newOrder = [...todoList];
-    newOrder.splice(fromIndex, 1);
-    newOrder.splice(toIndex, 0, movedTodo);
-    
-    const updates: Promise<void>[] = [];
-    
-    newOrder.forEach((todo, index) => {
-      const newSortOrder = index;
-      if (todo.sort_order !== newSortOrder) {
-        todo.sort_order = newSortOrder;
-        updates.push(api.updateTodoOrder(todo.id, newSortOrder));
-      }
-    });
-    
-    try {
-      await Promise.all(updates);
-      await logger.debug('Store', 'Todos reordered', { fromIndex, toIndex });
-    } catch (e) {
-      await logger.error('Store', 'Failed to reorder todos', e);
-      await loadTodos();
-    }
-  }
-
   function setFilter(newFilter: FilterType) {
     filter.value = newFilter;
   }
@@ -226,18 +196,11 @@ export const useTodoStore = defineStore('todo', () => {
     selectedDate.value = date;
   }
 
-  function setDragging(value: boolean, id: string | null = null) {
-    isDragging.value = value;
-    draggedId.value = id;
-  }
-
   return {
     todos,
     filter,
     selectedDate,
     isLoading,
-    isDragging,
-    draggedId,
     maxTodoLength,
     filteredTodos,
     stats,
@@ -246,9 +209,7 @@ export const useTodoStore = defineStore('todo', () => {
     addTodoWithDate,
     toggleTodo,
     deleteTodo,
-    reorderTodos,
     setFilter,
     setSelectedDate,
-    setDragging,
   };
 });

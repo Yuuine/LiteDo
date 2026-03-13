@@ -1,14 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { useTodoStore } from '../stores/todoStore';
 import OperationLogViewer from './OperationLogViewer.vue';
 import { operation, system } from '../utils/logger';
-
-declare global {
-  interface WindowEventMap {
-    toast: CustomEvent<{ message: string; type: 'success' | 'error' | 'info' }>;
-  }
-}
 
 function showToast(message: string, type: 'success' | 'error' | 'info' = 'success') {
   window.dispatchEvent(new CustomEvent('toast', { detail: { message, type } }));
@@ -25,6 +19,8 @@ const settings = ref({
   maxTodoLength: 30,
   themeColor: '#6366f1',
 });
+
+let originalThemeColor = '#6366f1';
 
 const presetColors = [
   { name: '靛蓝', color: '#6366f1' },
@@ -44,13 +40,17 @@ onMounted(async () => {
   await loadSettings();
 });
 
+onUnmounted(() => {
+  applyThemeColor(originalThemeColor);
+});
+
 async function loadSettings() {
   try {
     const savedSettings = localStorage.getItem('app_settings');
     if (savedSettings) {
       settings.value = { ...settings.value, ...JSON.parse(savedSettings) };
     }
-    applyThemeColor(settings.value.themeColor);
+    originalThemeColor = settings.value.themeColor;
   } catch (e) {
     console.error('Failed to load settings:', e);
   }
@@ -75,6 +75,7 @@ async function handleSave() {
     
     localStorage.setItem('app_settings', JSON.stringify(settings.value));
     store.maxTodoLength = settings.value.maxTodoLength;
+    originalThemeColor = settings.value.themeColor;
     
     const changes: string[] = [];
     if (settings.value.autoStart !== oldAutoStart) {
@@ -111,9 +112,10 @@ async function viewOperationLog() {
 async function openOperationLogLocation() {
   try {
     const { invoke } = await import('@tauri-apps/api/core');
-    const appDir = await invoke('get_app_data_dir');
+    const { join } = await import('@tauri-apps/api/path');
+    const appDir = await invoke<string>('get_app_data_dir');
     
-    const operationLogPath = `${appDir}\\operation.log`;
+    const operationLogPath = await join(appDir, 'operation.log');
     
     await invoke('open_file_location', { path: operationLogPath });
     await system('点击操作', '打开操作日志位置按钮', '用户点击打开操作日志文件位置');
@@ -276,11 +278,6 @@ async function openDebugLogLocation() {
   animation: fadeIn 0.15s ease;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
 .settings-panel {
   background: var(--bg-primary);
   border-radius: 16px;
@@ -291,17 +288,6 @@ async function openDebugLogLocation() {
   flex-direction: column;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   animation: slideUp 0.2s ease;
-}
-
-@keyframes slideUp {
-  from { 
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to { 
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 .settings-header {

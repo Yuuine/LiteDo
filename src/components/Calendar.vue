@@ -2,6 +2,16 @@
 import { ref, computed } from 'vue';
 import { isSameDay } from '../utils/dateUtils';
 
+declare global {
+  interface WindowEventMap {
+    toast: CustomEvent<{ message: string; type: 'success' | 'error' | 'info' }>;
+  }
+}
+
+function showToast(message: string, type: 'success' | 'error' | 'info' = 'info') {
+  window.dispatchEvent(new CustomEvent('toast', { detail: { message, type } }));
+}
+
 const props = defineProps<{
   selectedDate: Date;
 }>();
@@ -71,7 +81,10 @@ function changeMonth(delta: number) {
 }
 
 function selectDate(date: Date) {
-  if (date > currentDate.value) return;
+  if (date > currentDate.value) {
+    showToast('不能选择未来日期', 'info');
+    return;
+  }
   emit('selectDate', new Date(date));
 }
 
