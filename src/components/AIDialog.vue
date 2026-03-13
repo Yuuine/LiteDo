@@ -153,10 +153,6 @@ function handleBack() {
               ></textarea>
               <span class="char-count">{{ inputText.length }} 字</span>
             </div>
-            
-            <div v-if="!modelStore.hasModels" class="no-model-hint">
-              <span>请先在设置 → 模型中添加AI模型配置</span>
-            </div>
           </div>
           
           <div v-else class="result-section">
@@ -359,7 +355,7 @@ function handleBack() {
 
 .model-select:focus {
   border-color: var(--accent-color);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  box-shadow: 0 0 0 3px var(--accent-color-alpha);
 }
 
 .model-select:disabled {
@@ -385,7 +381,7 @@ function handleBack() {
 
 .task-textarea:focus {
   border-color: var(--accent-color);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  box-shadow: 0 0 0 3px var(--accent-color-alpha);
 }
 
 .task-textarea::placeholder {
@@ -398,17 +394,6 @@ function handleBack() {
   bottom: 12px;
   font-size: 12px;
   color: var(--text-muted);
-}
-
-.no-model-hint {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 14px;
-  background: rgba(245, 158, 11, 0.1);
-  border-radius: 10px;
-  font-size: 13px;
-  color: var(--warning-color);
 }
 
 .result-section {
@@ -470,7 +455,7 @@ function handleBack() {
 
 .todo-item.selected {
   border-color: var(--accent-color);
-  background: rgba(99, 102, 241, 0.1);
+  background: var(--accent-color-alpha);
 }
 
 .todo-checkbox {

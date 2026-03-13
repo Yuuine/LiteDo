@@ -52,7 +52,14 @@ export const useTodoStore = defineStore('todo', () => {
         break;
     }
     
-    return filtered.sort((a, b) => a.sort_order - b.sort_order);
+    return filtered.sort((a, b) => {
+      if (filter.value === 'all') {
+        if (a.completed !== b.completed) {
+          return a.completed ? 1 : -1;
+        }
+      }
+      return a.sort_order - b.sort_order;
+    });
   });
 
   const stats = computed(() => ({
@@ -128,11 +135,13 @@ export const useTodoStore = defineStore('todo', () => {
   }
 
   async function toggleTodo(id: string) {
-    const todo = todos.value.find(t => t.id === id);
-    if (!todo) {
+    const index = todos.value.findIndex(t => t.id === id);
+    if (index === -1) {
       await logger.warn('Store', 'Todo not found for toggle', { id });
       return;
     }
+    
+    const todo = todos.value[index];
     
     await logger.debug('Store', 'toggleTodo called', { 
       id, 
@@ -141,17 +150,55 @@ export const useTodoStore = defineStore('todo', () => {
     });
     
     try {
-      await api.toggleTodo(id, !todo.completed);
       const oldStatus = todo.completed;
-      todo.completed = !todo.completed;
-      todo.completed_at = todo.completed ? Math.floor(Date.now() / 1000) : null;
+      const newStatus = !todo.completed;
       
-      await operation('任务管理', '任务', `${todo.completed ? '完成' : '重新打开'}任务: ${todo.content}`, '成功');
+      await api.toggleTodo(id, newStatus);
+      
+      const updatedTodo = { ...todo };
+      updatedTodo.completed = newStatus;
+      updatedTodo.completed_at = newStatus ? Math.floor(Date.now() / 1000) : null;
+      
+      if (newStatus) {
+        const { start, end } = selectedDateRange.value;
+        const dayTodos = todos.value.filter(t => t.created_at >= start && t.created_at < end);
+        const completedTodos = dayTodos.filter(t => t.completed && t.id !== id);
+        
+        if (completedTodos.length > 0) {
+          const maxCompletedOrder = Math.max(...completedTodos.map(t => t.sort_order));
+          updatedTodo.sort_order = maxCompletedOrder + 1;
+        } else {
+          const activeTodos = dayTodos.filter(t => !t.completed);
+          if (activeTodos.length > 0) {
+            const maxActiveOrder = Math.max(...activeTodos.map(t => t.sort_order));
+            updatedTodo.sort_order = maxActiveOrder + 1;
+          }
+        }
+        
+        await api.updateTodoOrder(id, updatedTodo.sort_order);
+      } else {
+        const { start, end } = selectedDateRange.value;
+        const dayTodos = todos.value.filter(t => t.created_at >= start && t.created_at < end);
+        const activeTodos = dayTodos.filter(t => !t.completed && t.id !== id);
+        
+        if (activeTodos.length > 0) {
+          const minActiveOrder = Math.min(...activeTodos.map(t => t.sort_order));
+          updatedTodo.sort_order = minActiveOrder - 1;
+        }
+        
+        await api.updateTodoOrder(id, updatedTodo.sort_order);
+      }
+      
+      todos.value[index] = updatedTodo;
+      todos.value = [...todos.value];
+      
+      await operation('任务管理', '任务', `${updatedTodo.completed ? '完成' : '重新打开'}任务: ${updatedTodo.content}`, '成功');
       await logger.info('Store', 'Todo toggled successfully', { 
         id, 
         oldStatus,
-        newStatus: todo.completed,
-        completedAt: todo.completed_at
+        newStatus: updatedTodo.completed,
+        completedAt: updatedTodo.completed_at,
+        newSortOrder: updatedTodo.sort_order
       });
     } catch (e) {
       await operation('任务管理', '任务', `切换任务状态失败`, '失败');

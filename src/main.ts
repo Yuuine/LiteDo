@@ -10,6 +10,7 @@ function loadAndApplyTheme() {
       const settings = JSON.parse(savedSettings);
       if (settings.themeColor) {
         document.documentElement.style.setProperty('--accent-color', settings.themeColor);
+        document.documentElement.style.setProperty('--accent-color-alpha', settings.themeColor + '1a');
       }
     }
   } catch (e) {

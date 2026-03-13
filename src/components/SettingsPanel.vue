@@ -77,6 +77,7 @@ async function loadSettings() {
 
 function applyThemeColor(color: string) {
   document.documentElement.style.setProperty('--accent-color', color);
+  document.documentElement.style.setProperty('--accent-color-alpha', color + '1a');
 }
 
 function selectColor(color: string) {
@@ -850,7 +851,7 @@ function handleSelectModel(id: string) {
 .number-input:focus {
   outline: none;
   border-color: var(--accent-color);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  box-shadow: 0 0 0 3px var(--accent-color-alpha);
 }
 
 .theme-color-setting {
@@ -974,7 +975,7 @@ function handleSelectModel(id: string) {
 
 .model-card.selected {
   border-color: var(--accent-color);
-  background: rgba(99, 102, 241, 0.1);
+  background: var(--accent-color-alpha);
 }
 
 .model-info {
@@ -1128,7 +1129,7 @@ function handleSelectModel(id: string) {
 
 .form-input:focus {
   border-color: var(--accent-color);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  box-shadow: 0 0 0 3px var(--accent-color-alpha);
 }
 
 .form-input::placeholder {

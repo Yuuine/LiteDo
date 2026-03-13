@@ -277,18 +277,17 @@ onUnmounted(() => {
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  background: linear-gradient(135deg, #6366f1);
+  background: var(--accent-color);
   color: white;
   border: none;
   border-radius: 10px;
   padding: 6px 16px;
   transition: all 0.2s;
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
 }
 
 .ai-btn:hover {
+  opacity: 0.9;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
 }
 
 .settings-btn {
@@ -313,9 +312,10 @@ onUnmounted(() => {
 .main {
   flex: 1;
   padding: 20px 24px;
-  overflow-y: auto;
+  overflow-y: scroll;
   display: flex;
   flex-direction: column;
+  scrollbar-gutter: stable;
 }
 
 .add-task-section {
