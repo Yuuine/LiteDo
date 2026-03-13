@@ -2,13 +2,13 @@
 
 <div align="center">
 
-!\[LiteDo Logo]\(./screenshots/logo.svg null)
+![LiteDo Logo](./screenshots/logo.svg)
 
-**简洁、高效的Windows桌面待办事项管理工具**
+**简洁、高效的 Windows 桌面待办事项管理工具**
 
-[!\[License\](https://img.shields.io/badge/license-MIT-blue.svg null)](LICENSE)
-[!\[Version\](https://img.shields.io/badge/version-1.0.0-green.svg null)](https://github.com/yuuine/litedo/releases)
-[!\[Platform\](https://img.shields.io/badge/platform-Windows-blue.svg null)](https://github.com/yuuine/litedo/releases)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Version](https://img.shields.io/badge/version-1.0.0-green.svg)](https://github.com/yuuine/litedo/releases)
+[![Platform](https://img.shields.io/badge/platform-Windows-blue.svg)](https://github.com/yuuine/litedo/releases)
 
 </div>
 
