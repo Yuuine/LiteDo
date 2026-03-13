@@ -2,25 +2,27 @@
 
 <div align="center">
 
-![LiteDo Logo](./screenshots/logo.svg)
+!\[LiteDo Logo]\(./screenshots/logo.svg null)
 
-**简洁、高效、跨平台的待办事项管理工具**
+**简洁、高效的Windows桌面待办事项管理工具**
 
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.0.0-green.svg)](https://github.com/yuuine/litedo/releases)
-[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)](https://github.com/yuuine/litedo/releases)
+[!\[License\](https://img.shields.io/badge/license-MIT-blue.svg null)](LICENSE)
+[!\[Version\](https://img.shields.io/badge/version-1.0.0-green.svg null)](https://github.com/yuuine/litedo/releases)
+[!\[Platform\](https://img.shields.io/badge/platform-Windows-blue.svg null)](https://github.com/yuuine/litedo/releases)
 
 </div>
 
 ## ✨ 功能特性
 
 ### 核心功能
+
 - 📝 **待办事项管理** - 快速添加、编辑、删除和完成任务
 - 📅 **日期筛选** - 按日期查看任务，支持日历选择
 - 🎨 **主题自定义** - 9种预设主题色 + 自定义颜色
 - ⚙️ **灵活配置** - 自定义待办事项字数限制（10-200字）
 
 ### 其他功能
+
 - 📊 **任务统计** - 实时显示任务完成情况
 - 📋 **操作日志** - 记录所有用户操作
 - 🐛 **调试日志** - 详细的系统运行日志
@@ -35,6 +37,7 @@
 前往 [Releases](https://github.com/yuuine/litedo/releases) 页面下载对应平台的安装包：
 
 #### Windows
+
 - **MSI 安装包**：`LiteDo_1.0.0_x64_en-US.msi`
 - **NSIS 安装包**：`LiteDo_1.0.0_x64-setup.exe`
 
@@ -58,17 +61,20 @@ npm run tauri build
 ## 🛠️ 技术栈
 
 ### 前端
+
 - **Vue 3** - 渐进式 JavaScript 框架
 - **TypeScript** - 类型安全的 JavaScript 超集
 - **Pinia** - Vue 状态管理
 - **Vite** - 前端构建工具
 
 ### 后端
+
 - **Tauri 2.0** - 构建更小、更快、更安全的桌面应用
 - **Rust** - 系统编程语言
 - **SQLite** - 轻量级数据库
 
 ### 开发工具
+
 - **Vue DevTools** - Vue 调试工具
 - **Rust Analyzer** - Rust 语言服务器
 
@@ -117,12 +123,12 @@ LiteDo/
 
 感谢以下开源项目：
 
-- [Tauri](https://tauri.app/) - 构建跨平台桌面应用
+- [Tauri](https://tauri.app/) - 构建桌面应用框架
 - [Vue.js](https://vuejs.org/) - 渐进式 JavaScript 框架
 - [Pinia](https://pinia.vuejs.org/) - Vue 状态管理
-- [Vite](https://vitejs.dev/) - 下一代前端构建工具
+- [Vite](https://vitejs.dev/) - 前端构建工具
 
----
+***
 
 <div align="center">
 
