@@ -38,13 +38,6 @@
 - **MSI 安装包**：`LiteDo_1.0.0_x64_en-US.msi`
 - **NSIS 安装包**：`LiteDo_1.0.0_x64-setup.exe`
 
-#### macOS
-- **DMG 安装包**：`LiteDo_1.0.0_x64.dmg`
-
-#### Linux
-- **DEB 包**：`litedo_1.0.0_amd64.deb`
-- **AppImage**：`litedo_1.0.0_amd64.AppImage`
-
 ### 从源码构建
 
 ```bash
