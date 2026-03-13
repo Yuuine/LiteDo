@@ -3,7 +3,9 @@ import { ref } from 'vue';
 import type { Todo } from '../types/todo';
 import { useTodoStore } from '../stores/todoStore';
 import ConfirmDialog from './ConfirmDialog.vue';
+import Icon from './Icon.vue';
 import { formatTime } from '../utils/dateUtils';
+import { showToast } from '../utils/toast';
 
 const props = defineProps<{
   todo: Todo;
@@ -11,10 +13,6 @@ const props = defineProps<{
 
 const store = useTodoStore();
 const showConfirm = ref(false);
-
-function showToast(message: string, type: 'success' | 'error' | 'info' = 'success') {
-  window.dispatchEvent(new CustomEvent('toast', { detail: { message, type } }));
-}
 
 function handleDelete() {
   showConfirm.value = true;
@@ -49,9 +47,7 @@ function confirmDelete() {
     </div>
     
     <button class="delete-btn" @click.stop="handleDelete" title="删除">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M18 6L6 18M6 6l12 12"/>
-      </svg>
+      <Icon name="close" :size="14" />
     </button>
     
     <ConfirmDialog

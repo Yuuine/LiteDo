@@ -1,15 +1,13 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { useTodoStore } from '../stores/todoStore';
 import { useModelStore } from '../stores/modelStore';
 import OperationLogViewer from './OperationLogViewer.vue';
 import ConfirmDialog from './ConfirmDialog.vue';
+import Icon from './Icon.vue';
 import { operation, system } from '../utils/logger';
+import { showToast } from '../utils/toast';
 import type { ModelConfig, UpdateModelInput } from '../types/model';
-
-function showToast(message: string, type: 'success' | 'error' | 'info' = 'success') {
-  window.dispatchEvent(new CustomEvent('toast', { detail: { message, type } }));
-}
 
 const emit = defineEmits<{
   close: [];
@@ -54,6 +52,10 @@ const testResult = ref<{ success: boolean; error?: string } | null>(null);
 
 const showDeleteConfirm = ref(false);
 const modelToDelete = ref<ModelConfig | null>(null);
+
+const isFormValid = computed(() => {
+  return modelForm.value.name && modelForm.value.apiUrl && modelForm.value.modelName;
+});
 
 onMounted(async () => {
   await loadSettings();
@@ -211,7 +213,7 @@ async function handleTestConnection() {
 }
 
 async function handleSaveModel() {
-  if (!modelForm.value.name || !modelForm.value.apiUrl || !modelForm.value.modelName) {
+  if (!isFormValid.value) {
     showToast('请填写完整信息', 'error');
     return;
   }
@@ -274,9 +276,7 @@ function handleSelectModel(id: string) {
         <header class="settings-header">
           <h2>设置</h2>
           <button class="close-btn" @click="emit('close')" type="button">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M18 6L6 18M6 6l12 12"/>
-            </svg>
+            <Icon name="close" :size="20" />
           </button>
         </header>
         
@@ -287,10 +287,7 @@ function handleSelectModel(id: string) {
             @click="activeTab = 'general'"
             type="button"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="3"/>
-              <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
-            </svg>
+            <Icon name="settings" :size="16" />
             <span>通用</span>
           </button>
           <button 
@@ -299,9 +296,7 @@ function handleSelectModel(id: string) {
             @click="activeTab = 'model'"
             type="button"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2M7.5 13A2.5 2.5 0 0 0 5 15.5A2.5 2.5 0 0 0 7.5 18a2.5 2.5 0 0 0 2.5-2.5A2.5 2.5 0 0 0 7.5 13m9 0a2.5 2.5 0 0 0-2.5 2.5a2.5 2.5 0 0 0 2.5 2.5a2.5 2.5 0 0 0 2.5-2.5a2.5 2.5 0 0 0-2.5-2.5z"/>
-            </svg>
+            <Icon name="ai" :size="16" />
             <span>模型</span>
           </button>
         </nav>
@@ -349,9 +344,7 @@ function handleSelectModel(id: string) {
                     @click="selectColor(preset.color)"
                     type="button"
                   >
-                    <svg v-if="settings.themeColor === preset.color" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3">
-                      <polyline points="20 6 9 17 4 12"/>
-                    </svg>
+                    <Icon v-if="settings.themeColor === preset.color" name="check" :size="16" color="white" :stroke-width="3" />
                   </button>
                   <label class="color-btn custom-color" :style="{ backgroundColor: settings.themeColor }" title="自定义颜色">
                     <input
@@ -360,10 +353,7 @@ function handleSelectModel(id: string) {
                       @input="applyThemeColor(settings.themeColor)"
                       class="color-picker"
                     />
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-                      <circle cx="12" cy="12" r="3"/>
-                      <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
-                    </svg>
+                    <Icon name="settings" :size="16" color="white" />
                   </label>
                 </div>
               </div>
@@ -378,16 +368,11 @@ function handleSelectModel(id: string) {
                 </div>
                 <div class="btn-group">
                   <button class="btn-view-log" @click="viewOperationLog" type="button" title="查看操作日志">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                      <circle cx="12" cy="12" r="3"/>
-                    </svg>
+                    <Icon name="eye" :size="16" />
                     <span>查看</span>
                   </button>
                   <button class="btn-open-log" @click="openOperationLogLocation" type="button" title="在资源管理器中打开">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-                    </svg>
+                    <Icon name="folder" :size="16" />
                     <span>打开位置</span>
                   </button>
                 </div>
@@ -399,9 +384,7 @@ function handleSelectModel(id: string) {
                   <span class="setting-desc">记录系统运行详情</span>
                 </div>
                 <button class="btn-open-log" @click="openDebugLogLocation" type="button" title="在资源管理器中打开">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-                  </svg>
+                  <Icon name="folder" :size="16" />
                   <span>打开位置</span>
                 </button>
               </div>
@@ -413,18 +396,13 @@ function handleSelectModel(id: string) {
               <div class="section-header">
                 <h3 class="section-title">AI模型配置</h3>
                 <button class="btn-add-model" @click="openAddModel" type="button">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="12" y1="5" x2="12" y2="19"/>
-                    <line x1="5" y1="12" x2="19" y2="12"/>
-                  </svg>
+                  <Icon name="plus" :size="16" />
                   <span>添加模型</span>
                 </button>
               </div>
               
               <div v-if="modelStore.models.length === 0" class="empty-models">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                  <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2M7.5 13A2.5 2.5 0 0 0 5 15.5A2.5 2.5 0 0 0 7.5 18a2.5 2.5 0 0 0 2.5-2.5A2.5 2.5 0 0 0 7.5 13m9 0a2.5 2.5 0 0 0-2.5 2.5a2.5 2.5 0 0 0 2.5 2.5a2.5 2.5 0 0 0 2.5-2.5a2.5 2.5 0 0 0-2.5-2.5z"/>
-                </svg>
+                <Icon name="ai" :size="48" color="var(--text-muted)" />
                 <p>暂无模型配置</p>
                 <span>点击上方"添加模型"按钮配置AI模型</span>
               </div>
@@ -439,9 +417,7 @@ function handleSelectModel(id: string) {
                 >
                   <div class="model-info">
                     <div class="model-name">
-                      <svg v-if="modelStore.selectedModelId === model.id" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent-color)" stroke-width="2">
-                        <polyline points="20 6 9 17 4 12"/>
-                      </svg>
+                      <Icon v-if="modelStore.selectedModelId === model.id" name="check" :size="16" color="var(--accent-color)" />
                       {{ model.name }}
                     </div>
                     <div class="model-details">
@@ -452,16 +428,10 @@ function handleSelectModel(id: string) {
                   </div>
                   <div class="model-actions">
                     <button class="btn-icon" @click.stop="openEditModel(model)" title="编辑" type="button">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                      </svg>
+                      <Icon name="edit" :size="16" />
                     </button>
                     <button class="btn-icon btn-danger" @click.stop="handleDeleteModel(model)" title="删除" type="button">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="3 6 5 6 21 6"/>
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                      </svg>
+                      <Icon name="delete" :size="16" />
                     </button>
                   </div>
                 </div>
@@ -481,9 +451,7 @@ function handleSelectModel(id: string) {
         <header class="modal-header">
           <h3>{{ editingModel ? '编辑模型' : '添加模型' }}</h3>
           <button class="close-btn" @click="showAddModel = false" type="button">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M18 6L6 18M6 6l12 12"/>
-            </svg>
+            <Icon name="close" :size="20" />
           </button>
         </header>
         
@@ -1034,28 +1002,6 @@ function handleSelectModel(id: string) {
   color: var(--danger-color);
 }
 
-.help-text {
-  padding: 16px;
-  background: var(--bg-secondary);
-  border-radius: 12px;
-  font-size: 13px;
-  color: var(--text-secondary);
-  line-height: 1.6;
-}
-
-.help-text p {
-  margin: 0 0 12px;
-}
-
-.help-text ul {
-  margin: 0;
-  padding-left: 20px;
-}
-
-.help-text li {
-  margin-bottom: 4px;
-}
-
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -1197,5 +1143,21 @@ function handleSelectModel(id: string) {
 
 .btn-primary:hover {
   opacity: 0.9;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { 
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 </style>

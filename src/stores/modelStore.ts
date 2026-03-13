@@ -15,6 +15,8 @@ import logger, { operation } from '../utils/logger';
 
 const LOG_TAG = 'ModelStore';
 
+const apiKeyCache = new Map<string, string>();
+
 function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).substring(2);
 }
@@ -116,6 +118,7 @@ export const useModelStore = defineStore('model', () => {
     const processedUpdates = { ...updates };
     if (processedUpdates.apiKey) {
       processedUpdates.apiKey = await encryptApiKey(processedUpdates.apiKey);
+      apiKeyCache.delete(id);
     }
 
     models.value[index] = {
@@ -137,6 +140,7 @@ export const useModelStore = defineStore('model', () => {
     });
 
     models.value = models.value.filter((m) => m.id !== id);
+    apiKeyCache.delete(id);
 
     if (selectedModelId.value === id) {
       selectedModelId.value = models.value[0]?.id || '';
@@ -147,6 +151,11 @@ export const useModelStore = defineStore('model', () => {
   }
 
   async function getDecryptedApiKey(id: string): Promise<string> {
+    const cachedKey = apiKeyCache.get(id);
+    if (cachedKey) {
+      return cachedKey;
+    }
+
     const model = models.value.find((m) => m.id === id);
     if (!model) {
       await logger.error(LOG_TAG, 'API密钥解密失败：模型不存在', { id });
@@ -154,6 +163,10 @@ export const useModelStore = defineStore('model', () => {
     }
 
     const decrypted = await decryptApiKey(model.apiKey);
+    
+    if (decrypted) {
+      apiKeyCache.set(id, decrypted);
+    }
 
     await logger.info(LOG_TAG, 'API密钥解密完成', {
       id,
@@ -161,6 +174,14 @@ export const useModelStore = defineStore('model', () => {
     });
 
     return decrypted;
+  }
+
+  function clearApiKeyCache(id?: string): void {
+    if (id) {
+      apiKeyCache.delete(id);
+    } else {
+      apiKeyCache.clear();
+    }
   }
 
   async function testConnection(modelId: string): Promise<ConnectionTestResult> {
@@ -306,5 +327,6 @@ export const useModelStore = defineStore('model', () => {
     parseTodosWithAI,
     selectModel,
     getDecryptedApiKey,
+    clearApiKeyCache,
   };
 });

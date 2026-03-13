@@ -3,11 +3,9 @@ import { ref, computed } from 'vue';
 import { useModelStore } from '../stores/modelStore';
 import { useTodoStore } from '../stores/todoStore';
 import type { ParsedTodo } from '../types/model';
+import Icon from './Icon.vue';
 import { operation } from '../utils/logger';
-
-function showToast(message: string, type: 'success' | 'error' | 'info' = 'success') {
-  window.dispatchEvent(new CustomEvent('toast', { detail: { message, type } }));
-}
+import { showToast } from '../utils/toast';
 
 const emit = defineEmits<{
   close: [];
@@ -118,16 +116,12 @@ function handleBack() {
         <header class="dialog-header">
           <div class="header-left">
             <button v-if="showResult" class="back-btn" @click="handleBack" type="button">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="15 18 9 12 15 6"/>
-              </svg>
+              <Icon name="chevron-left" :size="20" />
             </button>
             <h2>{{ showResult ? '确认待办事项' : 'AI智能解析' }}</h2>
           </div>
           <button class="close-btn" @click="emit('close')" type="button">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M18 6L6 18M6 6l12 12"/>
-            </svg>
+            <Icon name="close" :size="20" />
           </button>
         </header>
         
@@ -173,12 +167,8 @@ function handleBack() {
                 @click="toggleTodo(index)"
               >
                 <div class="todo-checkbox">
-                  <svg v-if="selectedTodos.has(index)" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-color)" stroke-width="3">
-                    <polyline points="20 6 9 17 4 12"/>
-                  </svg>
-                  <svg v-else width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                  </svg>
+                  <Icon v-if="selectedTodos.has(index)" name="check" :size="18" color="var(--accent-color)" :stroke-width="3" />
+                  <Icon v-else name="checkbox" :size="18" />
                 </div>
                 <div class="todo-content">
                   <span class="todo-text">{{ todo.content }}</span>
@@ -203,12 +193,8 @@ function handleBack() {
               @click="handleParse"
               type="button"
             >
-              <svg v-if="isParsing" class="loading-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"/>
-              </svg>
-              <svg v-else width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2"/>
-              </svg>
+              <Icon v-if="isParsing" name="loading" :size="18" />
+              <Icon v-else name="ai" :size="18" />
               <span>{{ isParsing ? '解析中...' : '开始解析' }}</span>
             </button>
           </template>
@@ -540,15 +526,6 @@ function handleBack() {
   cursor: not-allowed;
 }
 
-.loading-icon {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
 .btn-secondary {
   flex: 1;
   padding: 12px;
@@ -582,5 +559,21 @@ function handleBack() {
 .btn-primary:hover {
   opacity: 0.9;
   transform: translateY(-1px);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { 
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 </style>

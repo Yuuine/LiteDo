@@ -6,8 +6,11 @@ import TodoItem from './components/TodoItem.vue';
 import SettingsPanel from './components/SettingsPanel.vue';
 import AIDialog from './components/AIDialog.vue';
 import Toast from './components/Toast.vue';
+import Loading from './components/Loading.vue';
+import Icon from './components/Icon.vue';
 import logger, { system } from './utils/logger';
 import { formatDate } from './utils/dateUtils';
+import { showToast } from './utils/toast';
 
 const store = useTodoStore();
 const showCalendar = ref(false);
@@ -15,10 +18,6 @@ const showSettings = ref(false);
 const showAIDialog = ref(false);
 const newTaskContent = ref('');
 const isSubmitting = ref(false);
-
-function showToast(message: string, type: 'success' | 'error' | 'info' = 'success') {
-  window.dispatchEvent(new CustomEvent('toast', { detail: { message, type } }));
-}
 
 function handleKeydown(e: KeyboardEvent) {
   if (e.key === 'Escape') {
@@ -98,28 +97,18 @@ onUnmounted(() => {
     <header class="header">
       <div class="header-left">
         <button class="date-btn" @click="handleOpenCalendar" type="button">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-            <line x1="16" y1="2" x2="16" y2="6"/>
-            <line x1="8" y1="2" x2="8" y2="6"/>
-            <line x1="3" y1="10" x2="21" y2="10"/>
-          </svg>
+          <Icon name="calendar" :size="18" />
           <span class="date-text">{{ formatDate(store.selectedDate) }}</span>
           <span class="task-count">{{ store.selectedDateStats.active }} 项待办</span>
         </button>
       </div>
       <div class="header-right">
         <button class="ai-btn" @click="handleOpenAI" title="AI智能解析" type="button">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2M7.5 13A2.5 2.5 0 0 0 5 15.5A2.5 2.5 0 0 0 7.5 18a2.5 2.5 0 0 0 2.5-2.5A2.5 2.5 0 0 0 7.5 13m9 0a2.5 2.5 0 0 0-2.5 2.5a2.5 2.5 0 0 0 2.5 2.5a2.5 2.5 0 0 0 2.5-2.5a2.5 2.5 0 0 0-2.5-2.5z"/>
-          </svg>
+          <Icon name="ai" :size="18" />
           <span>AI</span>
         </button>
         <button class="settings-btn" @click="handleOpenSettings" title="设置" type="button">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="3"/>
-            <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
-          </svg>
+          <Icon name="settings" :size="18" />
         </button>
       </div>
     </header>
@@ -145,10 +134,7 @@ onUnmounted(() => {
             :disabled="!newTaskContent.trim() || isSubmitting"
             title="添加任务"
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <line x1="12" y1="5" x2="12" y2="19"/>
-              <line x1="5" y1="12" x2="19" y2="12"/>
-            </svg>
+            <Icon name="plus" :size="20" :stroke-width="2.5" />
           </button>
         </form>
       </div>
@@ -210,6 +196,7 @@ onUnmounted(() => {
     <SettingsPanel v-if="showSettings" @close="showSettings = false" />
     <AIDialog v-if="showAIDialog" @close="showAIDialog = false" />
     <Toast />
+    <Loading />
   </div>
 </template>
 
@@ -488,6 +475,11 @@ onUnmounted(() => {
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
   animation: slideUp 0.2s ease;
   width: 320px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @keyframes slideUp {

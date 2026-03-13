@@ -111,6 +111,10 @@ LiteDo/
 - Rust 代码遵循官方规范
 - 提交信息遵循 [约定式提交](https://www.conventionalcommits.org/)
 
+## 📚 项目文档
+
+- [Vue项目架构说明](./docs/vue-architecture.md) - 详细的技术架构、核心模块、最佳实践说明
+
 ## 📝 更新日志
 
 查看 [CHANGELOG.md](CHANGELOG.md) 了解详细的版本更新历史。

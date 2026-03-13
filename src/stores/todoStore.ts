@@ -1,15 +1,30 @@
 import { defineStore } from 'pinia';
-import { ref, computed } from 'vue';
+import { ref, computed, shallowRef } from 'vue';
 import type { Todo, FilterType } from '../types/todo';
 import * as api from '../services/api';
 import logger, { operation } from '../utils/logger';
 
+
+
+function getStartOfDay(date: Date): number {
+  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  return Math.floor(d.getTime() / 1000);
+}
+
 export const useTodoStore = defineStore('todo', () => {
-  const todos = ref<Todo[]>([]);
+  const todos = shallowRef<Todo[]>([]);
   const filter = ref<FilterType>('all');
   const selectedDate = ref(new Date());
   const isLoading = ref(false);
   const maxTodoLength = ref(30);
+
+  const todoMap = computed(() => {
+    const map = new Map<string, Todo>();
+    for (const todo of todos.value) {
+      map.set(todo.id, todo);
+    }
+    return map;
+  });
 
   function loadSettings() {
     try {
@@ -26,12 +41,10 @@ export const useTodoStore = defineStore('todo', () => {
   loadSettings();
 
   const selectedDateRange = computed(() => {
-    const date = selectedDate.value;
-    const start = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-    const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
+    const start = getStartOfDay(selectedDate.value);
     return {
-      start: Math.floor(start.getTime() / 1000),
-      end: Math.floor(end.getTime() / 1000)
+      start,
+      end: start + 86400
     };
   });
 
@@ -41,40 +54,49 @@ export const useTodoStore = defineStore('todo', () => {
   });
 
   const filteredTodos = computed(() => {
-    let filtered = selectedDateTodos.value;
+    const dayTodos = selectedDateTodos.value;
     
-    switch (filter.value) {
-      case 'active':
-        filtered = filtered.filter(t => !t.completed);
-        break;
-      case 'completed':
-        filtered = filtered.filter(t => t.completed);
-        break;
+    if (filter.value === 'active') {
+      return dayTodos.filter(t => !t.completed).sort((a, b) => a.sort_order - b.sort_order);
     }
     
-    return filtered.sort((a, b) => {
-      if (filter.value === 'all') {
-        if (a.completed !== b.completed) {
-          return a.completed ? 1 : -1;
-        }
+    if (filter.value === 'completed') {
+      return dayTodos.filter(t => t.completed).sort((a, b) => a.sort_order - b.sort_order);
+    }
+    
+    return [...dayTodos].sort((a, b) => {
+      if (a.completed !== b.completed) {
+        return a.completed ? 1 : -1;
       }
       return a.sort_order - b.sort_order;
     });
   });
 
-  const stats = computed(() => ({
-    total: todos.value.length,
-    active: todos.value.filter(t => !t.completed).length,
-    completed: todos.value.filter(t => t.completed).length,
-  }));
+  const stats = computed(() => {
+    let active = 0;
+    let completed = 0;
+    for (const todo of todos.value) {
+      if (todo.completed) {
+        completed++;
+      } else {
+        active++;
+      }
+    }
+    return { total: todos.value.length, active, completed };
+  });
 
   const selectedDateStats = computed(() => {
     const dayTodos = selectedDateTodos.value;
-    return {
-      total: dayTodos.length,
-      active: dayTodos.filter(t => !t.completed).length,
-      completed: dayTodos.filter(t => t.completed).length,
-    };
+    let active = 0;
+    let completed = 0;
+    for (const todo of dayTodos) {
+      if (todo.completed) {
+        completed++;
+      } else {
+        active++;
+      }
+    }
+    return { total: dayTodos.length, active, completed };
   });
 
   async function loadTodos() {
@@ -84,8 +106,8 @@ export const useTodoStore = defineStore('todo', () => {
       todos.value = await api.getTodos();
       await logger.info('Store', 'Todos loaded successfully', { 
         count: todos.value.length,
-        activeCount: todos.value.filter(t => !t.completed).length,
-        completedCount: todos.value.filter(t => t.completed).length
+        activeCount: stats.value.active,
+        completedCount: stats.value.completed
       });
     } catch (e) {
       await logger.error('Store', 'Failed to load todos', { error: e, timestamp: new Date().toISOString() });
@@ -110,12 +132,15 @@ export const useTodoStore = defineStore('todo', () => {
     }
     
     try {
-      const maxOrder = todos.value.reduce((max, t) => Math.max(max, t.sort_order), 0);
+      let maxOrder = 0;
+      for (const t of todos.value) {
+        if (t.sort_order > maxOrder) maxOrder = t.sort_order;
+      }
       const sortOrder = maxOrder + 1;
       await logger.debug('Store', 'Creating todo with sort order', { sortOrder, totalTodos: todos.value.length });
       
       const todo = await api.addTodoWithDate(content, sortOrder, createdAt);
-      todos.value.unshift(todo);
+      todos.value = [todo, ...todos.value];
       
       await operation('任务管理', '任务', `添加任务: ${content}`, '成功');
       await logger.info('Store', 'Todo added successfully', { 
@@ -135,13 +160,11 @@ export const useTodoStore = defineStore('todo', () => {
   }
 
   async function toggleTodo(id: string) {
-    const index = todos.value.findIndex(t => t.id === id);
-    if (index === -1) {
+    const todo = todoMap.value.get(id);
+    if (!todo) {
       await logger.warn('Store', 'Todo not found for toggle', { id });
       return;
     }
-    
-    const todo = todos.value[index];
     
     await logger.debug('Store', 'toggleTodo called', { 
       id, 
@@ -155,42 +178,46 @@ export const useTodoStore = defineStore('todo', () => {
       
       await api.toggleTodo(id, newStatus);
       
-      const updatedTodo = { ...todo };
-      updatedTodo.completed = newStatus;
-      updatedTodo.completed_at = newStatus ? Math.floor(Date.now() / 1000) : null;
+      const updatedTodo: Todo = {
+        ...todo,
+        completed: newStatus,
+        completed_at: newStatus ? Math.floor(Date.now() / 1000) : null,
+      };
       
       if (newStatus) {
         const { start, end } = selectedDateRange.value;
-        const dayTodos = todos.value.filter(t => t.created_at >= start && t.created_at < end);
-        const completedTodos = dayTodos.filter(t => t.completed && t.id !== id);
+        let maxCompletedOrder = 0;
+        let maxActiveOrder = 0;
         
-        if (completedTodos.length > 0) {
-          const maxCompletedOrder = Math.max(...completedTodos.map(t => t.sort_order));
-          updatedTodo.sort_order = maxCompletedOrder + 1;
-        } else {
-          const activeTodos = dayTodos.filter(t => !t.completed);
-          if (activeTodos.length > 0) {
-            const maxActiveOrder = Math.max(...activeTodos.map(t => t.sort_order));
-            updatedTodo.sort_order = maxActiveOrder + 1;
+        for (const t of todos.value) {
+          if (t.created_at >= start && t.created_at < end && t.id !== id) {
+            if (t.completed && t.sort_order > maxCompletedOrder) {
+              maxCompletedOrder = t.sort_order;
+            } else if (!t.completed && t.sort_order > maxActiveOrder) {
+              maxActiveOrder = t.sort_order;
+            }
           }
         }
         
+        updatedTodo.sort_order = maxCompletedOrder > 0 ? maxCompletedOrder + 1 : (maxActiveOrder > 0 ? maxActiveOrder + 1 : 1);
         await api.updateTodoOrder(id, updatedTodo.sort_order);
       } else {
         const { start, end } = selectedDateRange.value;
-        const dayTodos = todos.value.filter(t => t.created_at >= start && t.created_at < end);
-        const activeTodos = dayTodos.filter(t => !t.completed && t.id !== id);
+        let minActiveOrder = Infinity;
         
-        if (activeTodos.length > 0) {
-          const minActiveOrder = Math.min(...activeTodos.map(t => t.sort_order));
-          updatedTodo.sort_order = minActiveOrder - 1;
+        for (const t of todos.value) {
+          if (t.created_at >= start && t.created_at < end && !t.completed && t.id !== id) {
+            if (t.sort_order < minActiveOrder) {
+              minActiveOrder = t.sort_order;
+            }
+          }
         }
         
+        updatedTodo.sort_order = minActiveOrder !== Infinity ? minActiveOrder - 1 : 1;
         await api.updateTodoOrder(id, updatedTodo.sort_order);
       }
       
-      todos.value[index] = updatedTodo;
-      todos.value = [...todos.value];
+      todos.value = todos.value.map(t => t.id === id ? updatedTodo : t);
       
       await operation('任务管理', '任务', `${updatedTodo.completed ? '完成' : '重新打开'}任务: ${updatedTodo.content}`, '成功');
       await logger.info('Store', 'Todo toggled successfully', { 
@@ -207,7 +234,7 @@ export const useTodoStore = defineStore('todo', () => {
   }
 
   async function deleteTodo(id: string) {
-    const todo = todos.value.find(t => t.id === id);
+    const todo = todoMap.value.get(id);
     if (!todo) {
       await logger.warn('Store', 'Todo not found for deletion', { id });
       return;

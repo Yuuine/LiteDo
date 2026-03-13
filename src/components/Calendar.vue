@@ -1,16 +1,8 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import Icon from './Icon.vue';
 import { isSameDay } from '../utils/dateUtils';
-
-declare global {
-  interface WindowEventMap {
-    toast: CustomEvent<{ message: string; type: 'success' | 'error' | 'info' }>;
-  }
-}
-
-function showToast(message: string, type: 'success' | 'error' | 'info' = 'info') {
-  window.dispatchEvent(new CustomEvent('toast', { detail: { message, type } }));
-}
+import { showToast } from '../utils/toast';
 
 const props = defineProps<{
   selectedDate: Date;
@@ -20,23 +12,42 @@ const emit = defineEmits<{
   selectDate: [date: Date];
 }>();
 
-const currentDate = computed(() => new Date());
-const viewYear = ref(currentDate.value.getFullYear());
-const viewMonth = ref(currentDate.value.getMonth());
+const today = new Date();
+today.setHours(0, 0, 0, 0);
+
+const viewYear = ref(today.getFullYear());
+const viewMonth = ref(today.getMonth());
 
 const weekDays = ['日', '一', '二', '三', '四', '五', '六'];
 
-const calendarDays = computed(() => {
-  const firstDay = new Date(viewYear.value, viewMonth.value, 1);
-  const lastDay = new Date(viewYear.value, viewMonth.value + 1, 0);
-  const days: { date: Date; isCurrentMonth: boolean; isToday: boolean; isSelected: boolean; isFuture: boolean }[] = [];
-  const today = currentDate.value;
+interface CalendarDay {
+  date: Date;
+  dateNum: number;
+  isCurrentMonth: boolean;
+  isToday: boolean;
+  isSelected: boolean;
+  isFuture: boolean;
+}
+
+const calendarDays = computed((): CalendarDay[] => {
+  const year = viewYear.value;
+  const month = viewMonth.value;
+  const days: CalendarDay[] = [];
   
-  const startPadding = firstDay.getDay();
-  for (let i = startPadding - 1; i >= 0; i--) {
-    const date = new Date(viewYear.value, viewMonth.value, -i);
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  const firstDayOfWeek = firstDay.getDay();
+  const daysInMonth = lastDay.getDate();
+  
+  const prevMonth = new Date(year, month, 0);
+  const daysInPrevMonth = prevMonth.getDate();
+  
+  for (let i = firstDayOfWeek - 1; i >= 0; i--) {
+    const dateNum = daysInPrevMonth - i;
+    const date = new Date(year, month - 1, dateNum);
     days.push({
       date,
+      dateNum,
       isCurrentMonth: false,
       isToday: false,
       isSelected: isSameDay(date, props.selectedDate),
@@ -44,10 +55,11 @@ const calendarDays = computed(() => {
     });
   }
   
-  for (let i = 1; i <= lastDay.getDate(); i++) {
-    const date = new Date(viewYear.value, viewMonth.value, i);
+  for (let i = 1; i <= daysInMonth; i++) {
+    const date = new Date(year, month, i);
     days.push({
       date,
+      dateNum: i,
       isCurrentMonth: true,
       isToday: isSameDay(date, today),
       isSelected: isSameDay(date, props.selectedDate),
@@ -57,9 +69,10 @@ const calendarDays = computed(() => {
   
   const remaining = 42 - days.length;
   for (let i = 1; i <= remaining; i++) {
-    const date = new Date(viewYear.value, viewMonth.value + 1, i);
+    const date = new Date(year, month + 1, i);
     days.push({
       date,
+      dateNum: i,
       isCurrentMonth: false,
       isToday: false,
       isSelected: isSameDay(date, props.selectedDate),
@@ -80,18 +93,18 @@ function changeMonth(delta: number) {
   viewMonth.value = newDate.getMonth();
 }
 
-function selectDate(date: Date) {
-  if (date > currentDate.value) {
+function selectDate(day: CalendarDay) {
+  if (day.isFuture) {
     showToast('不能选择未来日期', 'info');
     return;
   }
-  emit('selectDate', new Date(date));
+  emit('selectDate', new Date(day.date));
 }
 
 function goToToday() {
-  viewYear.value = currentDate.value.getFullYear();
-  viewMonth.value = currentDate.value.getMonth();
-  emit('selectDate', new Date(currentDate.value));
+  viewYear.value = today.getFullYear();
+  viewMonth.value = today.getMonth();
+  emit('selectDate', new Date(today));
 }
 </script>
 
@@ -99,15 +112,11 @@ function goToToday() {
   <div class="calendar">
     <header class="calendar-header">
       <button class="nav-btn" @click="changeMonth(-1)" type="button">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="15 18 9 12 15 6"/>
-        </svg>
+        <Icon name="chevron-left" :size="16" />
       </button>
       <span class="month-label">{{ monthLabel }}</span>
       <button class="nav-btn" @click="changeMonth(1)" type="button">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="9 18 15 12 9 6"/>
-        </svg>
+        <Icon name="chevron-right" :size="16" />
       </button>
     </header>
     
@@ -126,11 +135,11 @@ function goToToday() {
           'selected': day.isSelected,
           'future': day.isFuture
         }"
-        @click="selectDate(day.date)"
+        @click="selectDate(day)"
         :disabled="day.isFuture"
         type="button"
       >
-        {{ day.date.getDate() }}
+        {{ day.dateNum }}
       </button>
     </div>
     
