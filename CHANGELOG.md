@@ -9,22 +9,32 @@
 
 ### Fixed
 
-- 修复了日历组件中未来日期可被选择的问题。此前用户切换到未来月份时，可以点击选择未来日期，与产品需求"仅允许查看和选择当前及过去的日期"不符。现在所有未来日期均显示为灰色禁用状态
-- 修复了消息提示（Toast）显示位置在右侧的问题，现已改为顶部居中显示，视觉焦点更集中
+- 修复了日历组件中未来日期可被选择的问题。此前用户切换到未来月份时，可以点击选择未来日期，与产品需求"仅允许查看和选择当前及过去的日期"不符。现在所有未来日期均显示为灰色禁用状态（修复提交：a18cdec，涉及文件：`src/components/Calendar.vue`）
+- 修复了消息提示（Toast）显示位置在右侧的问题，现已改为顶部居中显示，视觉焦点更集中（修复提交：a18cdec，涉及文件：`src/components/Toast.vue`、`src/styles/main.css`）
 
 ### Added
 
-- 新增公共组件库，包括遮罩层组件、按钮组件和优先级标签组件，提升界面一致性
-- 新增 Composables 组合式函数，包括设置管理和主题管理，优化代码复用性
+- 新增公共组件库 `src/components/common/`，提升界面一致性和代码复用性
+  - `BaseButton.vue`：基础按钮组件，支持 primary/secondary/danger/text 四种类型和 small/medium/large 三种尺寸
+  - `BaseOverlay.vue`：基础遮罩层组件，支持 Teleport 到 body、点击关闭、过渡动画
+  - `PriorityBadge.vue`：优先级标签组件，使用颜色区分高/中/低三级优先级
+- 新增 Composables 组合式函数 `src/composables/`，优化代码复用性
+  - `useSettings.ts`：设置管理组合式函数，统一管理主题色、优先级开关、字体主题等设置，支持自动持久化
+  - `useTheme.ts`：主题管理组合式函数，封装主题色应用、字体加载、Web 字体动态加载等逻辑
+  - `index.ts`：统一导出入口
+- 新增字体主题配置 `FONT_THEME_CONFIG`，支持系统默认、SF Pro、Roboto、思源黑体、衬线体、等宽字体六种字体主题（涉及文件：`src/constants/model.ts`）
 
 ### Changed
 
-- 优化了任务排序逻辑，代码更简洁高效
+- 优化了任务排序逻辑 `sortTodos()`，代码更简洁高效（涉及文件：`src/stores/todoStore.ts`）
+- 优化了应用入口 `main.ts`，新增主题和字体预加载逻辑，减少首屏闪烁
+- 更新了版本号至 1.1.2（涉及文件：`package.json`、`src-tauri/Cargo.toml`、`src-tauri/tauri.conf.json`）
 
 ### Removed
 
-- 移除了未使用的 Modal 组件
-- 移除了未使用的 API 函数和类型定义
+- 移除了未使用的 `Modal.vue` 组件（删除提交：a18cdec）
+- 移除了 `src/services/api.ts` 中未使用的 API 函数
+- 移除了 `src/types/model.ts` 和 `src/types/todo.ts` 中未使用的类型定义
 
 ## [1.1.1] - 2026-03-14
 

@@ -78,7 +78,7 @@ src/
 │   ├── useSettings.ts      # 设置管理
 │   └── useTheme.ts         # 主题管理
 ├── constants/              # 常量定义
-│   └── model.ts            # AI 模型相关常量、优先级配置
+│   └── model.ts            # AI 模型相关常量、优先级配置、字体主题配置
 ├── services/               # 服务层
 │   ├── api.ts              # Tauri API 封装
 │   └── openaiApi.ts        # OpenAI API 封装
@@ -255,7 +255,7 @@ withLoading(fn): Promise<T>  // 自动管理加载状态
 
 #### model.ts
 
-AI 模型相关常量和优先级配置。
+AI 模型相关常量、优先级配置和字体主题配置。
 
 ```typescript
 // 存储键
@@ -292,6 +292,38 @@ API_CONFIG = {
 }
 ```
 
+### 5. Composables 模块（v1.1.2+）
+
+#### useSettings
+
+设置管理组合式函数，统一管理应用设置。
+
+```typescript
+// 核心功能
+const settings = ref<AppSettings>()     // 应用设置状态
+const themeColor = computed()           // 主题色（双向绑定）
+const autoStart = computed()            // 开机自启动
+const priorityEnabled = computed()      // 优先级功能开关
+const sortByPriority = computed()       // 按优先级排序
+
+// 方法
+updateSettings(newSettings)             // 更新设置
+resetSettings()                         // 重置为默认设置
+loadSettings()                          // 从 localStorage 加载
+saveSettings()                          // 保存到 localStorage
+```
+
+#### useTheme
+
+主题管理组合式函数，封装主题相关逻辑。
+
+```typescript
+// 核心方法
+applyThemeColor(color)                  // 应用主题色到 CSS 变量
+applyOverlayBackground(opacity)         // 设置遮罩层背景透明度
+loadWebFont(url)                        // 动态加载 Web 字体
+```
+
 ## 组件设计
 
 ### 可复用组件
@@ -322,6 +354,39 @@ API_CONFIG = {
 - 点击遮罩关闭
 - 过渡动画
 - 统一样式
+
+#### BaseButton 组件（v1.1.2+）
+
+基础按钮组件，提供统一的按钮样式。
+
+```vue
+<BaseButton type="primary" size="medium" @click="handleClick">
+  保存
+</BaseButton>
+<BaseButton type="danger" size="small" :loading="isDeleting">
+  删除
+</BaseButton>
+```
+
+特性：
+- 支持 primary/secondary/danger/text 四种类型
+- 支持 small/medium/large 三种尺寸
+- 支持 loading 和 disabled 状态
+- 统一的悬停和点击效果
+
+#### PriorityBadge 组件（v1.1.2+）
+
+优先级标签组件，用于显示任务优先级。
+
+```vue
+<PriorityBadge priority="high" />
+<PriorityBadge priority="medium" size="medium" />
+```
+
+特性：
+- 颜色区分优先级（高-红色、中-橙色、低-绿色）
+- 支持 small/medium 两种尺寸
+- 背景色与文字色协调
 
 #### Loading 组件
 
