@@ -6,15 +6,15 @@
 
 **简洁、高效的 Windows 桌面待办事项管理工具**
 
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.1.2-green.svg)](https://github.com/yuuine/litedo/releases)
-[![Platform](https://img.shields.io/badge/platform-Windows-blue.svg)](https://github.com/yuuine/litedo/releases)
-[![Tauri](https://img.shields.io/badge/tauri-2.0-orange.svg)](https://tauri.app/)
-[![Vue](https://img.shields.io/badge/vue-3.5-brightgreen.svg)](https://vuejs.org/)
+[!\[License\](https://img.shields.io/badge/license-MIT-blue.svg null)](LICENSE)
+[!\[Version\](https://img.shields.io/badge/version-1.1.2-green.svg null)](https://github.com/yuuine/litedo/releases)
+[!\[Platform\](https://img.shields.io/badge/platform-Windows-blue.svg null)](https://github.com/yuuine/litedo/releases)
+[!\[Tauri\](https://img.shields.io/badge/tauri-2.0-orange.svg null)](https://tauri.app/)
+[!\[Vue\](https://img.shields.io/badge/vue-3.5-brightgreen.svg null)](https://vuejs.org/)
 
 </div>
 
----
+***
 
 ## 目录
 
@@ -28,19 +28,19 @@
 - [许可证](#-许可证)
 - [致谢](#-致谢)
 
----
+***
 
 ## ✨ 功能特性
 
 ### 核心功能
 
-| 功能 | 描述 |
-|------|------|
-| 📝 **待办事项管理** | 快速添加、编辑、删除和完成任务。 |
-| 📅 **日期筛选** | 按日期查看任务，支持日历选择和日期导航，仅允许选择当前及过去日期 |
-| 🎨 **主题自定义** | 9种预设主题色 + 自定义颜色选择器。|
-| 🤖 **AI 智能解析** | 支持多种 AI 模型，自然语言解析待办事项 |
-| ⚡ **优先级管理** | 高/中/低三级优先级设置，支持按优先级排序 |
+| 功能             | 描述                               |
+| -------------- | -------------------------------- |
+| 📝 **待办事项管理**  | 快速添加、编辑、删除和完成任务。                 |
+| 📅 **日期筛选**    | 按日期查看任务，支持日历选择和日期导航，仅允许选择当前及过去日期 |
+| 🎨 **主题自定义**   | 9种预设主题色 + 自定义颜色选择器。              |
+| 🤖 **AI 智能解析** | 支持多种 AI 模型，自然语言解析待办事项            |
+| ⚡ **优先级管理**    | 高/中/低三级优先级设置，支持按优先级排序            |
 
 ### AI 功能
 
@@ -51,11 +51,11 @@
 
 ### 日志系统
 
-| 日志类型 | 描述 | 文件 |
-|---------|------|------|
-| 📋 **操作日志** | 记录用户业务操作（添加、删除、完成任务等） | `operation.log` |
-| 🐛 **调试日志** | 记录系统运行详情（JSON格式，结构化数据） | `debug.log` |
-| 🎯 **系统日志** | 记录所有系统交互操作 | `system.log` |
+| 日志类型        | 描述                     | 文件              |
+| ----------- | ---------------------- | --------------- |
+| 📋 **操作日志** | 记录用户业务操作（添加、删除、完成任务等）  | `operation.log` |
+| 🐛 **调试日志** | 记录系统运行详情（JSON格式，结构化数据） | `debug.log`     |
+| 🎯 **系统日志** | 记录所有系统交互操作             | `system.log`    |
 
 ### 其他功能
 
@@ -63,17 +63,17 @@
 - 💾 **本地存储** - SQLite 数据库，数据安全可靠
 - 🔒 **数据安全** - API 密钥加密存储
 
----
+***
 
 ## 🚀 快速开始
 
 ### 环境要求
 
-| 依赖 | 版本要求 | 说明 |
-|------|---------|------|
-| Node.js | >= 18.x | JavaScript 运行时 |
-| Rust | >= 1.70 | 系统编程语言 |
-| pnpm/npm/yarn | 最新版 | 包管理器 |
+| 依赖            | 版本要求    | 说明             |
+| ------------- | ------- | -------------- |
+| Node.js       | >= 18.x | JavaScript 运行时 |
+| Rust          | >= 1.70 | 系统编程语言         |
+| pnpm/npm/yarn | 最新版     | 包管理器           |
 
 ### 下载安装
 
@@ -81,9 +81,9 @@
 
 #### Windows
 
-| 安装包 | 说明 |
-|--------|------|
-| `LiteDo_1.0.0_x64_en-US.msi` | MSI 安装包 |
+| 安装包                          | 说明       |
+| ---------------------------- | -------- |
+| `LiteDo_1.0.0_x64_en-US.msi` | MSI 安装包  |
 | `LiteDo_1.0.0_x64-setup.exe` | NSIS 安装包 |
 
 ### 从源码构建
@@ -119,30 +119,30 @@ npm run clean
 npm run clean:all
 ```
 
----
+***
 
 ## 🛠️ 技术栈
 
 ### 前端技术
 
-| 技术 | 版本 | 用途 |
-|------|------|------|
-| [Vue 3](https://vuejs.org/) | ^3.5.13 | 渐进式 JavaScript 框架，采用 Composition API |
-| [TypeScript](https://www.typescriptlang.org/) | ~5.6.2 | 类型安全的 JavaScript 超集 |
-| [Pinia](https://pinia.vuejs.org/) | ^3.0.4 | Vue 官方状态管理库 |
-| [Vite](https://vitejs.dev/) | ^6.0.3 | 前端构建工具 |
+| 技术                                            | 版本      | 用途                                   |
+| --------------------------------------------- | ------- | ------------------------------------ |
+| [Vue 3](https://vuejs.org/)                   | ^3.5.13 | 渐进式 JavaScript 框架，采用 Composition API |
+| [TypeScript](https://www.typescriptlang.org/) | \~5.6.2 | 类型安全的 JavaScript 超集                  |
+| [Pinia](https://pinia.vuejs.org/)             | ^3.0.4  | Vue 官方状态管理库                          |
+| [Vite](https://vitejs.dev/)                   | ^6.0.3  | 前端构建工具                               |
 
 ### 后端技术
 
-| 技术 | 版本 | 用途 |
-|------|------|------|
-| [Tauri 2.0](https://tauri.app/) | ^2 | 构建更小、更快、更安全的桌面应用 |
-| [Rust](https://www.rust-lang.org/) | - | 系统编程语言 |
-| [SQLite](https://www.sqlite.org/) | - | 轻量级嵌入式数据库 |
-| [SQLx](https://github.com/launchbadge/sqlx) | ^0.8 | Rust 异步 SQL 工具包 |
-| [Tokio](https://tokio.rs/) | ^1 | Rust 异步运行时 |
+| 技术                                          | 版本   | 用途               |
+| ------------------------------------------- | ---- | ---------------- |
+| [Tauri 2.0](https://tauri.app/)             | ^2   | 构建更小、更快、更安全的桌面应用 |
+| [Rust](https://www.rust-lang.org/)          | -    | 系统编程语言           |
+| [SQLite](https://www.sqlite.org/)           | -    | 轻量级嵌入式数据库        |
+| [SQLx](https://github.com/launchbadge/sqlx) | ^0.8 | Rust 异步 SQL 工具包  |
+| [Tokio](https://tokio.rs/)                  | ^1   | Rust 异步运行时       |
 
----
+***
 
 ## 🏗️ 项目架构
 
@@ -265,7 +265,7 @@ flowchart LR
     style Storage fill:#fce4ec
 ```
 
----
+***
 
 ## 📁 项目结构
 
@@ -339,16 +339,17 @@ LiteDo/
 └── package.json                # 项目配置
 ```
 
----
+***
 
 ## 📚 项目文档
 
-| 文档 | 说明 |
-|------|------|
-| [Vue项目架构说明](./docs/vue-architecture.md) | 详细的技术架构、核心模块、最佳实践说明 |
-| [更新日志](./CHANGELOG.md) | 版本更新历史 |
+| 文档                                      | 说明                       |
+| --------------------------------------- | ------------------------ |
+| [Vue项目架构说明](./docs/vue-architecture.md) | 前端Vue详细的技术架构、核心模块、最佳实践说明 |
+| [完整架构说明](./docs/architecture.md) | 整体系统详细架构设计文档             |
+| [更新日志](./CHANGELOG.md)                  | 版本更新历史                   |
 
----
+***
 
 ## 📝 更新日志
 
@@ -356,34 +357,34 @@ LiteDo/
 
 ### 最新版本
 
-**[1.1.2] - 2026-03-14**
+**\[1.1.2] - 2026-03-14**
 
 - 🧩 新增公共组件库：BaseButton、BaseOverlay、PriorityBadge
 - 🔧 新增 Composables 组合式函数：useSettings、useTheme
 - 🐛 修复日历未来日期可选问题、Toast 显示位置问题
 - 🏗️ 架构优化：代码重构，提升可维护性
 
----
+***
 
 ## 📄 许可证
 
 本项目采用 MIT 许可证 - 详见 [LICENSE](LICENSE) 文件。
 
----
+***
 
 ## 🙏 致谢
 
 感谢以下开源项目：
 
-| 项目 | 说明 |
-|------|------|
-| [Tauri](https://tauri.app/) | 构建更小、更快、更安全的桌面应用框架 |
-| [Vue.js](https://vuejs.org/) | 渐进式 JavaScript 框架 |
-| [Pinia](https://pinia.vuejs.org/) | Vue 官方状态管理库 |
-| [Vite](https://vitejs.dev/) | 下一代前端构建工具 |
-| [SQLx](https://github.com/launchbadge/sqlx) | Rust 异步 SQL 工具包 |
+| 项目                                          | 说明                 |
+| ------------------------------------------- | ------------------ |
+| [Tauri](https://tauri.app/)                 | 构建更小、更快、更安全的桌面应用框架 |
+| [Vue.js](https://vuejs.org/)                | 渐进式 JavaScript 框架  |
+| [Pinia](https://pinia.vuejs.org/)           | Vue 官方状态管理库        |
+| [Vite](https://vitejs.dev/)                 | 下一代前端构建工具          |
+| [SQLx](https://github.com/launchbadge/sqlx) | Rust 异步 SQL 工具包    |
 
----
+***
 
 <div align="center">
 
