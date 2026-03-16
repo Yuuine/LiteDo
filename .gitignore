@@ -83,6 +83,9 @@ temp/
 *.tar.gz
 *.rar
 
+# Export files - LiteDo 导出的数据文件
+litedo-export-*.json
+
 # Screenshots placeholder (保留目录结构)
 screenshots/*.png
 !screenshots/README.md

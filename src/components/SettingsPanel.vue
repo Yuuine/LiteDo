@@ -8,6 +8,9 @@ import Icon from './Icon.vue';
 import { operation, system } from '../utils/logger';
 import { showToast } from '../utils/toast';
 import type { ModelConfig, UpdateModelInput } from '../types/model';
+import type { ImportStrategy, ImportResult } from '../types/export';
+import { exportTodos } from '../utils/dataExport';
+import { importTodos } from '../utils/dataImport';
 
 const emit = defineEmits<{
   close: [];
@@ -53,6 +56,11 @@ const testResult = ref<{ success: boolean; error?: string } | null>(null);
 
 const showDeleteConfirm = ref(false);
 const modelToDelete = ref<ModelConfig | null>(null);
+
+const isExporting = ref(false);
+const showImportDialog = ref(false);
+const selectedStrategy = ref<ImportStrategy>('merge');
+const importResult = ref<ImportResult | null>(null);
 
 const isFormValid = computed(() => {
   return modelForm.value.name && modelForm.value.apiUrl && modelForm.value.modelName;
@@ -278,6 +286,58 @@ async function confirmDeleteModel() {
 function handleSelectModel(id: string) {
   modelStore.selectModel(id);
 }
+
+async function handleExport() {
+  if (isExporting.value) return;
+  
+  const todos = store.todos;
+  if (todos.length === 0) {
+    showToast('没有待办事项可导出', 'error');
+    return;
+  }
+  
+  isExporting.value = true;
+  try {
+    const success = await exportTodos(todos);
+    if (success) {
+      showToast(`成功导出 ${todos.length} 条待办事项`, 'success');
+    }
+  } catch (error) {
+    console.error('Export failed:', error);
+    showToast('导出失败，请重试', 'error');
+  } finally {
+    isExporting.value = false;
+  }
+}
+
+function openImportDialog() {
+  selectedStrategy.value = 'merge';
+  importResult.value = null;
+  showImportDialog.value = true;
+}
+
+async function handleImport() {
+  try {
+    const result = await importTodos(selectedStrategy.value, store.todos);
+    
+    if (result === null) {
+      return;
+    }
+    
+    importResult.value = result;
+    
+    if (result.success && result.errors.length === 0) {
+      await store.loadTodos();
+      showToast(`成功导入 ${result.imported} 条待办事项`, 'success');
+      showImportDialog.value = false;
+    } else if (result.imported > 0) {
+      await store.loadTodos();
+    }
+  } catch (error) {
+    console.error('Import failed:', error);
+    showToast('导入失败: ' + (error instanceof Error ? error.message : '未知错误'), 'error');
+  }
+}
 </script>
 
 <template>
@@ -380,6 +440,41 @@ function handleSelectModel(id: string) {
                   <input type="checkbox" v-model="settings.sortByPriority" />
                   <span class="toggle-slider"></span>
                 </label>
+              </div>
+            </section>
+            
+            <section class="section">
+              <h3 class="section-title">数据管理</h3>
+              
+              <div class="setting-item">
+                <div class="setting-info">
+                  <span class="setting-label">导出数据</span>
+                  <span class="setting-desc">将所有待办事项导出为 JSON 文件</span>
+                </div>
+                <button 
+                  class="btn-export" 
+                  @click="handleExport" 
+                  type="button"
+                  :disabled="isExporting"
+                >
+                  <Icon name="download" :size="16" />
+                  <span>{{ isExporting ? '导出中...' : '导出' }}</span>
+                </button>
+              </div>
+              
+              <div class="setting-item">
+                <div class="setting-info">
+                  <span class="setting-label">导入数据</span>
+                  <span class="setting-desc">从 JSON 文件导入待办事项</span>
+                </div>
+                <button 
+                  class="btn-import" 
+                  @click="openImportDialog" 
+                  type="button"
+                >
+                  <Icon name="upload" :size="16" />
+                  <span>导入</span>
+                </button>
               </div>
             </section>
             
@@ -544,6 +639,68 @@ function handleSelectModel(id: string) {
       @confirm="confirmDeleteModel"
       @cancel="showDeleteConfirm = false"
     />
+    
+    <div v-if="showImportDialog" class="modal-overlay" @click="showImportDialog = false">
+      <div class="modal-content import-modal" @click.stop>
+        <header class="modal-header">
+          <h3>导入待办事项</h3>
+          <button class="close-btn" @click="showImportDialog = false" type="button">
+            <Icon name="close" :size="20" />
+          </button>
+        </header>
+        
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">导入策略</label>
+            <div class="strategy-options">
+              <label class="strategy-option" :class="{ active: selectedStrategy === 'merge' }">
+                <input type="radio" v-model="selectedStrategy" value="merge" />
+                <div class="strategy-content">
+                  <span class="strategy-title">合并</span>
+                  <span class="strategy-desc">保留现有数据，添加导入的数据</span>
+                </div>
+              </label>
+              <label class="strategy-option" :class="{ active: selectedStrategy === 'skip_duplicates' }">
+                <input type="radio" v-model="selectedStrategy" value="skip_duplicates" />
+                <div class="strategy-content">
+                  <span class="strategy-title">跳过重复</span>
+                  <span class="strategy-desc">按 ID 跳过已存在的待办事项</span>
+                </div>
+              </label>
+              <label class="strategy-option" :class="{ active: selectedStrategy === 'replace' }">
+                <input type="radio" v-model="selectedStrategy" value="replace" />
+                <div class="strategy-content">
+                  <span class="strategy-title">替换</span>
+                  <span class="strategy-desc">清空现有数据后导入（谨慎使用）</span>
+                </div>
+              </label>
+            </div>
+          </div>
+          
+          <div v-if="importResult" class="import-result" :class="{ success: importResult.success, 'has-errors': importResult.errors.length > 0 }">
+            <div class="result-summary">
+              <span>总计: {{ importResult.total }}</span>
+              <span>成功: {{ importResult.imported }}</span>
+              <span>跳过: {{ importResult.skipped }}</span>
+              <span v-if="importResult.errors.length > 0">错误: {{ importResult.errors.length }}</span>
+            </div>
+            <div v-if="importResult.errors.length > 0" class="result-errors">
+              <div v-for="(error, index) in importResult.errors.slice(0, 5)" :key="index" class="error-item">
+                {{ error }}
+              </div>
+              <div v-if="importResult.errors.length > 5" class="error-more">
+                还有 {{ importResult.errors.length - 5 }} 条错误...
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <footer class="modal-footer">
+          <button class="btn-secondary" @click="showImportDialog = false" type="button">取消</button>
+          <button class="btn-primary" @click="handleImport" type="button">选择文件并导入</button>
+        </footer>
+      </div>
+    </div>
   </Teleport>
 </template>
 
@@ -1147,6 +1304,130 @@ function handleSelectModel(id: string) {
 
 .btn-primary:hover {
   opacity: 0.9;
+}
+
+.btn-export,
+.btn-import {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  background: var(--accent-color);
+  color: white;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.btn-export:hover,
+.btn-import:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.btn-export:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.import-modal {
+  max-width: 480px;
+}
+
+.strategy-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.strategy-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--bg-secondary);
+  border: 2px solid transparent;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.strategy-option:hover {
+  background: var(--border-color);
+}
+
+.strategy-option.active {
+  border-color: var(--accent-color);
+  background: var(--accent-color-alpha);
+}
+
+.strategy-option input {
+  margin-top: 2px;
+  accent-color: var(--accent-color);
+}
+
+.strategy-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.strategy-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.strategy-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.import-result {
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-top: 12px;
+  background: var(--bg-secondary);
+}
+
+.import-result.success {
+  background: rgba(34, 197, 94, 0.1);
+}
+
+.import-result.has-errors {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.result-summary {
+  display: flex;
+  gap: 16px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.result-errors {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-color);
+}
+
+.error-item {
+  font-size: 12px;
+  color: var(--danger-color);
+  margin-bottom: 4px;
+  word-break: break-all;
+}
+
+.error-more {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-style: italic;
 }
 
 @keyframes fadeIn {
