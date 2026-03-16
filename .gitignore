@@ -96,3 +96,6 @@ RELEASE_GUIDE.md
 # Development scripts documentation (仅本地使用)
 scripts/README.md
 RELEASE_NOTES.md
+
+# Trae IDE configuration (本地 IDE 配置)
+.trae/
