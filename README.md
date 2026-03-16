@@ -6,11 +6,11 @@
 
 **简洁、高效的 Windows 桌面待办事项管理工具**
 
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.1.2-green.svg)](https://github.com/yuuine/litedo/releases)
-[![Platform](https://img.shields.io/badge/platform-Windows-blue.svg)](https://github.com/yuuine/litedo/releases)
-[![Tauri](https://img.shields.io/badge/tauri-2.0-orange.svg)](https://tauri.app/)
-[![Vue](https://img.shields.io/badge/vue-3.5-brightgreen.svg)](https://vuejs.org/)
+[!\[License\](https://img.shields.io/badge/license-MIT-blue.svg null)](LICENSE)
+[!\[Version\](https://img.shields.io/badge/version-1.1.2-green.svg null)](https://github.com/yuuine/litedo/releases)
+[!\[Platform\](https://img.shields.io/badge/platform-Windows-blue.svg null)](https://github.com/yuuine/litedo/releases)
+[!\[Tauri\](https://img.shields.io/badge/tauri-2.0-orange.svg null)](https://tauri.app/)
+[!\[Vue\](https://img.shields.io/badge/vue-3.5-brightgreen.svg null)](https://vuejs.org/)
 
 </div>
 
@@ -346,8 +346,9 @@ LiteDo/
 | 文档                                      | 说明                       |
 | --------------------------------------- | ------------------------ |
 | [Vue项目架构说明](./docs/vue-architecture.md) | 前端Vue详细的技术架构、核心模块、最佳实践说明 |
-| [完整架构说明](./docs/architecture.md) | 整体系统详细架构设计文档             |
+| [完整架构说明](./docs/architecture.md)        | 整体系统详细架构设计文档             |
 | [更新日志](./CHANGELOG.md)                  | 版本更新历史                   |
+| [自动化脚本](./SCRIPTS.md)                                   | 自动化脚本及其使用方法              |
 
 ***
 
