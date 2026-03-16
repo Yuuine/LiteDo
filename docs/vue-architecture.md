@@ -88,11 +88,14 @@ src/
 ├── styles/                 # 全局样式
 │   └── main.css            # 主样式文件
 ├── types/                  # TypeScript 类型定义
+│   ├── export.ts           # 导出数据类型定义（v1.1.4+）
 │   ├── global.d.ts         # 全局类型声明
 │   ├── model.ts            # AI 模型类型
 │   └── todo.ts             # 待办事项类型、优先级类型
 ├── utils/                  # 工具函数
 │   ├── crypto.ts           # 加密工具
+│   ├── dataExport.ts       # 数据导出工具（v1.1.4+）
+│   ├── dataImport.ts       # 数据导入工具（v1.1.4+）
 │   ├── dateUtils.ts        # 日期处理工具
 │   ├── loading.ts          # 加载状态工具
 │   ├── logger.ts           # 日志工具
@@ -251,6 +254,32 @@ hideLoading(): void
 withLoading(fn): Promise<T>  // 自动管理加载状态
 ```
 
+#### dataExport.ts（v1.1.4+）
+
+数据导出工具，支持将待办事项导出为 JSON 格式。
+
+```typescript
+exportTodos(todos): Promise<boolean>   // 导出待办事项到 JSON 文件
+```
+
+特性：
+- 使用系统原生文件对话框选择保存路径
+- 导出数据包含版本标识、时间戳、应用信息和元数据统计
+- 支持未来版本的数据格式迁移
+
+#### dataImport.ts（v1.1.4+）
+
+数据导入工具，支持从 JSON 文件导入待办事项。
+
+```typescript
+importTodos(strategy, existingTodos): Promise<ImportResult | null>
+```
+
+特性：
+- 支持三种导入策略：replace（替换）、skip_duplicates（跳过重复）、merge（合并）
+- 自动验证文件格式和数据有效性
+- 返回详细的导入结果（成功数、跳过数、错误信息）
+
 ### 4. 常量模块 (constants)
 
 #### model.ts
@@ -322,6 +351,47 @@ saveSettings()                          // 保存到 localStorage
 applyThemeColor(color)                  // 应用主题色到 CSS 变量
 applyOverlayBackground(opacity)         // 设置遮罩层背景透明度
 loadWebFont(url)                        // 动态加载 Web 字体
+```
+
+### 6. 类型定义模块（v1.1.4+）
+
+#### export.ts
+
+导出数据类型定义，用于数据导入导出功能。
+
+```typescript
+// 导入策略类型
+type ImportStrategy = 'merge' | 'replace' | 'skip_duplicates'
+
+// 导出数据结构
+interface ExportData {
+  version: string           // 导出格式版本
+  exportedAt: string        // 导出时间（ISO 格式）
+  app: string               // 应用名称
+  appVersion: string        // 应用版本
+  todos: ExportedTodo[]     // 待办事项列表
+  metadata?: ExportMetadata // 元数据统计
+}
+
+// 导出的待办事项结构
+interface ExportedTodo {
+  id: string
+  content: string
+  completed: boolean
+  priority: PriorityType
+  created_at: number
+  completed_at: number | null
+  sort_order: number
+}
+
+// 导入结果
+interface ImportResult {
+  success: boolean
+  total: number
+  imported: number
+  skipped: number
+  errors: string[]
+}
 ```
 
 ## 组件设计

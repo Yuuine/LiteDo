@@ -5,6 +5,30 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)，
 并且本项目遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.1.4] - 2026-03-16
+
+### Added
+
+- 新增数据导入导出功能，支持待办事项的完整备份与迁移
+  - 导出功能：将所有待办事项导出为标准 JSON 格式文件，包含任务信息和元数据统计（涉及文件：`src/utils/dataExport.ts`）
+  - 导入功能：支持三种导入策略（替换、跳过重复、合并），满足不同场景需求（涉及文件：`src/utils/dataImport.ts`）
+  - 导出类型定义：新增 `src/types/export.ts`，定义导出数据结构、导入结果和导入策略类型
+- 新增版本管理自动化脚本 `scripts/bump-version.js`
+  - 一键更新项目中所有版本号定义（package.json、package-lock.json、tauri.conf.json、Cargo.toml、dataExport.ts）
+  - 支持语义化版本类型（major/minor/patch）自动递增
+  - 集成 npm scripts：`npm run version:patch`、`npm run version:minor`、`npm run version:major`
+- 新增脚本文档 `docs/SCRIPTS.md`，详细说明项目自动化脚本的使用方法
+
+### Fixed
+
+- 修复了数据导出功能因 Tauri 文件系统权限不足而失败的问题，添加 `fs:allow-write-text-file` 权限配置（修复提交：5d735e5，涉及文件：`src-tauri/capabilities/default.json`）
+- 修复了版本管理脚本对 `package-lock.json` 的处理问题，改用 npm 命令自动更新，避免手动修改导致的格式错误（修复提交：01ebef0）
+
+### Changed
+
+- 更新了设置面板，新增"数据管理"区域，提供导入和导出操作入口（涉及文件：`src/components/SettingsPanel.vue`）
+- 更新了版本号至 1.1.4（涉及文件：`package.json`、`src-tauri/Cargo.toml`、`src-tauri/tauri.conf.json`、`src/utils/dataExport.ts`）
+
 ## [1.1.2] - 2026-03-14
 
 ### Fixed
@@ -135,7 +159,6 @@
 
 - 任务分类和标签系统
 - 任务提醒功能
-- 数据导入导出
 - 任务搜索功能
 
 ---

@@ -7,7 +7,7 @@
 **简洁、高效的 Windows 桌面待办事项管理工具**
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.1.2-green.svg)](https://github.com/yuuine/litedo/releases)
+[![Version](https://img.shields.io/badge/version-1.1.4-green.svg)](https://github.com/yuuine/litedo/releases)
 [![Platform](https://img.shields.io/badge/platform-Windows-blue.svg)](https://github.com/yuuine/litedo/releases)
 [![Tauri](https://img.shields.io/badge/tauri-2.0-orange.svg)](https://tauri.app/)
 [![Vue](https://img.shields.io/badge/vue-3.5-brightgreen.svg)](https://vuejs.org/)
@@ -41,6 +41,7 @@
 | 🎨 **主题自定义**   | 9种预设主题色 + 自定义颜色选择器。              |
 | 🤖 **AI 智能解析** | 支持多种 AI 模型，自然语言解析待办事项            |
 | ⚡ **优先级管理**    | 高/中/低三级优先级设置，支持按优先级排序            |
+| 💾 **数据导入导出**  | 支持 JSON 格式导入导出，方便数据备份与迁移         |
 
 ### AI 功能
 
@@ -310,11 +311,14 @@ LiteDo/
 │   ├── styles/                 # 全局样式
 │   │   └── main.css            # 主样式文件
 │   ├── types/                  # TypeScript 类型定义
+│   │   ├── export.ts           # 导出数据类型定义（v1.1.4+）
 │   │   ├── global.d.ts         # 全局类型声明
 │   │   ├── model.ts            # AI 模型类型
 │   │   └── todo.ts             # 待办事项类型、优先级类型
 │   ├── utils/                  # 工具函数
 │   │   ├── crypto.ts           # 加密工具
+│   │   ├── dataExport.ts       # 数据导出工具（v1.1.4+）
+│   │   ├── dataImport.ts       # 数据导入工具（v1.1.4+）
 │   │   ├── dateUtils.ts        # 日期处理工具
 │   │   ├── loading.ts          # 加载状态工具
 │   │   ├── logger.ts           # 日志工具
@@ -358,12 +362,11 @@ LiteDo/
 
 ### 最新版本
 
-**\[1.1.2] - 2026-03-14**
+**\[1.1.4] - 2026-03-16**
 
-- 🧩 新增公共组件库：BaseButton、BaseOverlay、PriorityBadge
-- 🔧 新增 Composables 组合式函数：useSettings、useTheme
-- 🐛 修复日历未来日期可选问题、Toast 显示位置问题
-- 🏗️ 架构优化：代码重构，提升可维护性
+- 💾 新增数据导入导出功能，支持 JSON 格式备份与迁移
+- 🔧 新增版本管理自动化脚本，提升开发效率
+- 🐛 修复导出权限问题，优化版本号同步机制
 
 ***
 
