@@ -1,6 +1,7 @@
-import { readFileSync, writeFileSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { execSync } from 'child_process';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT_DIR = resolve(__dirname, '..');
@@ -32,32 +33,23 @@ const VERSION_FILES = [
   },
 ];
 
-function updatePackageLockJson(currentVersion, newVersion) {
-  const filePath = 'package-lock.json';
-  const fullPath = resolve(ROOT_DIR, filePath);
-  const content = readFileSync(fullPath, 'utf-8');
-  const json = JSON.parse(content);
-
-  let updated = false;
-
-  if (json.version === currentVersion) {
-    json.version = newVersion;
-    updated = true;
-  } else {
-    console.warn(`  警告: ${filePath} 顶层版本号 (${json.version}) 与当前版本 (${currentVersion}) 不一致`);
+function updatePackageLockJson(newVersion) {
+  const lockPath = resolve(ROOT_DIR, 'package-lock.json');
+  if (!existsSync(lockPath)) {
+    console.log('跳过 (文件不存在)');
+    return false;
   }
 
-  if (json.packages && json.packages[''] && json.packages[''].version === currentVersion) {
-    json.packages[''].version = newVersion;
-    updated = true;
-  }
-
-  if (updated) {
-    writeFileSync(fullPath, JSON.stringify(json, null, 2) + '\n', 'utf-8');
+  try {
+    execSync('npm install --package-lock-only --ignore-scripts --silent', {
+      cwd: ROOT_DIR,
+      stdio: 'pipe',
+    });
     return true;
+  } catch (error) {
+    console.warn(`警告: npm install 失败，请手动运行 npm install 更新 package-lock.json`);
+    return false;
   }
-
-  return false;
 }
 
 function parseVersion(version) {
@@ -196,7 +188,7 @@ function main() {
 
   process.stdout.write(`  更新 package-lock.json... `);
   try {
-    if (updatePackageLockJson(currentVersion, newVersion)) {
+    if (updatePackageLockJson(newVersion)) {
       console.log('成功');
       successCount++;
     }
