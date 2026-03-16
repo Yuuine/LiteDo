@@ -5,7 +5,7 @@ import type { ExportData, ExportedTodo } from '../types/export';
 import { operation } from './logger';
 
 const CURRENT_EXPORT_VERSION = '1.0';
-const APP_VERSION = '1.1.2';
+const APP_VERSION = '1.1.3';
 
 export async function exportTodos(todos: Todo[]): Promise<boolean> {
   try {
